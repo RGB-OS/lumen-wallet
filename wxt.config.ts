@@ -12,9 +12,9 @@ export default defineConfig({
       },
     ],
   },
-  // webExt: {
-  //   startUrls: ["https://wxt.dev"],
-  // },
+  webExt: {
+    startUrls: ["https://wxt.dev"],
+  },
   modules: ['@wxt-dev/module-react'],
   vite: () => ({
     plugins: [tailwindcss()],

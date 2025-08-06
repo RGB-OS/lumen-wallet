@@ -65,7 +65,7 @@ console.log('AssetPage transfersData', transfersData, 'txStatus', txStatus, 'txE
           </div>
           <div className="flex gap-4 mt-4">
             <Link to={`/wallet/send/${asset_id}`} className='w-1/2'> <Button className='w-full'>Send</Button></Link>
-            <Link to={`/wallet/receive`} className='w-1/2'>  <Button className='w-full' variant="outline">Receive</Button></Link>
+            <Link to={`/wallet/receive/${asset_id}`} className='w-1/2'>  <Button className='w-full' variant="outline">Receive</Button></Link>
           </div>
         </CardContent>
       </Card>

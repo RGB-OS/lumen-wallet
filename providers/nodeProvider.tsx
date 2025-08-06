@@ -1,4 +1,5 @@
-import { apiService } from "@/services/api";
+
+import api from "@/services/api";
 import { AddressResponse, BTCBalance, ListAssetsResponse, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse } from "@/types/rgb-types";
 import { createContext, PropsWithChildren, useEffect, useContext, useState,useRef } from "react";
 import { useParams } from "react-router-dom";
@@ -94,7 +95,7 @@ export const RLNApiProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
         setStatuses((prev) => ({ ...prev, [path]: 'loading' }));
         try {
-            const response = await apiService.getApiInstance().request({
+            const response = await api.request({
                 method: call.method,
                 url: `/${call.path}`,
                 data: call.body
@@ -117,7 +118,7 @@ export const RLNApiProvider: React.FC<PropsWithChildren> = ({ children }) => {
         setStatuses((prev) => ({ ...prev, [key]: 'loading' }));
       
         try {
-          const response = await apiService.getApiInstance().request({
+          const response = await api.request({
             method,
             url: `/${path}`,
             data: body,
@@ -189,7 +190,7 @@ interface ApiCall {
 const nodeApiCall: ApiCall[] = [
     { method: 'GET', path: 'networkinfo' },
     { method: 'POST', path: 'address' },
-    { method: 'GET', path: 'listchannels' },
+    // { method: 'GET', path: 'listchannels' },
     // { method: 'GET', path: 'listpeers' },
     { method: 'POST', path: 'btcbalance', body: { skip_sync: false } },
     // { method: 'POST', path: 'listtransactions', body: { skip_sync: false } },
@@ -215,7 +216,7 @@ async function makeApiCalls(apiCalls: ApiCall[]): Promise<RLNApiCallResponse[]> 
     return Promise.all(
         apiCalls.map(async (call) => {
             try {
-                const response = await apiService.getApiInstance().request({
+                const response = await api.request({
                     method: call.method,
                     url: `/${call.path}`,
                     data: call.body,
