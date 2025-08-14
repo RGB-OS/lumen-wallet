@@ -2,32 +2,41 @@ import { nodeService } from "@/services/nodeService";
 import { walletService } from "@/services/walletService";
 
 export default defineBackground(() => {
-  console.log('Hello background!', { id: browser.runtime.id });
-
-  browser.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
-    const origin = sender.origin || new URL(sender.url || '').origin;
-  
-    console.log('Received message:', msg, 'from origin:', origin);
-    try {
-      switch (msg.method) {
-        case 'enable':
-          const res = await walletService.enable(origin);
-          return sendResponse({ result: res });
-        case 'getInfo':
-          return sendResponse({ result: await walletService.getInfo(origin) });
-        case 'getBalance':
-          return sendResponse({ result: await walletService.getBalance(origin) });
-        // case 'makeInvoice':
-        //   return sendResponse({ result: await nodeService.makeInvoice(msg.params.amount) });
-        // case 'sendPayment':
-        //   return sendResponse({ result: await nodeService.sendPayment(msg.params.invoice) });
-        // case 'keysend':
-        //   return sendResponse({ result: await nodeService.keysend(msg.params.dest, msg.params.amount) });
-        default:
-          return sendResponse({ error: 'Unknown method' });
+  browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    (async () => {
+      const origin = sender.origin || new URL(sender.url || '').origin;
+      try {
+        switch (msg.webln.method) {
+          case 'enable':
+            const res = await walletService.enable(origin);
+            return sendResponse({ result: res });
+          case 'isEnabled':
+            const enabled = await walletService.isEnabled(origin);
+            return sendResponse({ result: enabled });
+          case 'getInfo':
+            return sendResponse({ result: await walletService.getInfo(origin) });
+          case 'getBalance':
+            return sendResponse({ result: await walletService.getBalance(origin) });
+          case 'request': {
+            const { method, params } = msg.webln.params;
+            const result = await walletService.handleCustomRequest(origin, method, params);
+            return sendResponse({ result });
+          }
+          default:
+           throw new WalletMethodNotFound(msg.webln.method);
+        }
+      } catch (err: any) {
+        return sendResponse({
+          error: {
+            message: err.message ?? 'Unknown error',
+            type: err.name ?? 'UnknownError',
+            code: err.code ?? 'UNSPECIFIED',
+          },
+        });
       }
-    } catch (err: any) {
-      return sendResponse({ error: err.message });
-    }
+    })();
+
+    return true; // Required to keep the message channel open
   });
+
 });

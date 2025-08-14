@@ -5,24 +5,18 @@ export default defineContentScript({
     await injectScript("/injected.js", {
       keepInDom: true,
     });
-    // browser.runtime.onMessage.addListener((message, _, sendResponse) => {
-    //   console.log("Content script received message:", message);
-    //   sendResponse(Math.random());
-    //   return true;
-    // });
     window.addEventListener('message', (event) => {
       console.log("Content script received message:", event.data);
-      if (!event.data?.webln) return;
-    
-      const request = event.data.webln;
-    
+      const { id, webln } = event.data;
+      if (!webln) return;
+
       browser.runtime.sendMessage(
-        { webln: request },
+        { webln },
         (response) => {
           window.postMessage(
             {
               weblnResponse: {
-                id: request.id,
+                id,
                 ...response,
               },
             },
@@ -31,6 +25,5 @@ export default defineContentScript({
         }
       );
     });
-    console.log("Done!");
   },
 });

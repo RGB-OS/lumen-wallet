@@ -42,6 +42,7 @@ export default defineUnlistedScript(() => {
       makeInvoice: (args: { amount: number }) => callWebLN('makeInvoice', args),
       sendPayment: (invoice: string) => callWebLN('sendPayment', { invoice }),
       keysend: (dest: string, amount: number) => callWebLN('keysend', { dest, amount }),
+      request: (method: string, params: any) => callWebLN('request', { method, params }),
     };
     
   });
