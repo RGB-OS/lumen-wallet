@@ -1,8 +1,9 @@
 import api from './api';
-import { AddressResponse, BTCBalance, InvoiceDecoded, ListTransfersResponse, NodeInfoResponse } from '@/types/rgb-types';
+import { AddressResponse, BTCBalance, InvoiceDecoded, ListTransfersResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
-    asset_id: string;
+    asset_id: string | undefined;
+    amount: number | undefined;
     duration_seconds: number;
     min_confirmations: number;
 };
@@ -17,7 +18,7 @@ type TXIdResponse = {
 };
 
 class NodeService {
- 
+
     async nodeinfo() {
         return api.get<NodeInfoResponse>('/nodeinfo');
     }
@@ -51,14 +52,20 @@ class NodeService {
         return res.data;
     }
 
-    async rgbinvoice(params: RGBInvoiceRequest) {
-        const { asset_id, duration_seconds = 86400, min_confirmations = 1 } = params;
-       const res = await api.post<RgbInvoiceResponse>('/rgbinvoice', {
-            asset_id: asset_id,
+    async rgbinvoice(params?: RGBInvoiceRequest) {
+        const {
+            asset_id,
+            amount,
+            duration_seconds = 86400,
+            min_confirmations = 1,
+        } = params ?? {};
+        const res = await api.post<RgbInvoiceResponse>('/rgbinvoice', {
+            asset_id,
+            amount,
             duration_seconds,
             min_confirmations,
         });
-       return res.data;
+        return res.data;
     }
 
     async decodergbinvoice(params: DecodeInvoiceRequest) {
@@ -66,12 +73,39 @@ class NodeService {
         return res.data;
     }
 
-    async sendasset(params: InvoiceDecoded) {
-        const res = await api.post<TXIdResponse>('/sendasset', params);
+    async sendasset(params: SendRGBAsset) {
+        const {
+            asset_id,
+            recipient_id,
+            assignment,
+            transport_endpoints,
+            donation = false,
+            fee_rate = 5,
+            min_confirmations = 1,
+            skip_sync = false
+        } = params;
+        if (!asset_id || !recipient_id || !assignment || !transport_endpoints) {
+            throw new Error('Missing required parameters for sendasset');
+        }
+        const res = await api.post<TXIdResponse>('/sendasset', {
+            asset_id,
+            recipient_id,
+            assignment,
+            transport_endpoints,
+            donation,
+            fee_rate,
+            min_confirmations,
+            skip_sync
+        });
+        
         return res.data;
     }
-    async refreshtransfers(params: { skip_sync?: boolean }) {
-        const res = await api.post('/refreshtransfers', params);
+    async refreshtransfers(params?: { skip_sync?: boolean }) {
+        const {
+            skip_sync = false
+        } = params ?? {};
+
+        const res = await api.post('/refreshtransfers', { skip_sync });
         return res.data;
     }
 }

@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2 } from "lucide-react";
 import { storage } from '#imports';
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 // import { useToast } from "@/hooks/use-toast";
 
 const connectNodeSchema = z.object({
@@ -25,10 +25,14 @@ interface ConnectNodeProps {
 
 export const ConnectNode = () => {
   const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate()
-//   const { toast } = useToast();
+  const location = useLocation();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  //   const { toast } = useToast();
   console.log('ConnectNode component rendered');
-  const { isAuthenticated, isLoading:authorizing } = useAuth()
+  const { isAuthenticated, isLoading: authorizing } = useAuth()
+  const externalInvoke = new URLSearchParams(location.search).get('from') === 'external';
 
   const {
     register,
@@ -49,7 +53,7 @@ export const ConnectNode = () => {
   const onSubmit = async (data: ConnectNodeForm) => {
     setIsLoading(true);
     console.log('ConnectNode component rendered');
-    
+
     try {
       const response = await axios.get(`${data.nodeEndpoint}/nodeinfo`, {
         headers: {
@@ -63,23 +67,32 @@ export const ConnectNode = () => {
       // Store connection details for future use
       await storage.setItem('local:node-endpoint', data.nodeEndpoint);
       await storage.setItem('local:access-token', data.accessToken);
-  
-      
-    //   toast({
-    //     title: "Success",
-    //     description: "Successfully connected to node",
-    //   });
-    console.log('Successfully connected to node:', data.nodeEndpoint);
-    navigate('/wallet')
- 
-      // onConnected();
+
+      if (externalInvoke) {
+        console.log('This popup was opened by script, so close it');
+        browser.runtime.sendMessage({
+          type: 'wallet-auth-response',
+          success: true,
+        });
+        window.close();
+      } else {
+        console.log('This popup was opened by within EXTENSION');
+        navigate('/wallet')
+      }
+
     } catch (error) {
+      browser.runtime.sendMessage({
+        type: 'wallet-auth-response',
+        success: false,
+        error: 'Login failed',
+      });
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.response?.statusText || 'Unknown error'
+        : 'Failed to connect to node';
+
+      setErrorMessage(`Error: ${message}`);
       console.error('Error connecting to node:', error);
-    //   toast({
-    //     title: "Connection Failed",
-    //     description: error instanceof Error ? error.message : "Failed to connect to node",
-    //     variant: "destructive",
-    //   });
+
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +104,7 @@ export const ConnectNode = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Connect Node</CardTitle>
           <CardDescription>
-            Connect to your Bitcoin node to continue
+            Connect to your RGB LN to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,7 +123,7 @@ export const ConnectNode = () => {
                 <p className="text-sm text-destructive">{errors.nodeEndpoint.message}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="accessToken">Access Token</Label>
               <Input
@@ -136,6 +149,9 @@ export const ConnectNode = () => {
               )}
             </Button>
           </form>
+          {errorMessage && (
+            <div className="text-sm text-destructive pt-2 mb-4">{errorMessage}</div>
+          )}
         </CardContent>
       </Card>
     </div>

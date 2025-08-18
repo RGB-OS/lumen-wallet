@@ -14,6 +14,9 @@ import { Copy } from 'lucide-react';
 import { ListAssetsResponse } from '@/types/rgb-types';
 import { useRLNApi, useRLNState } from '@/providers/nodeProvider';
 import { useNavigate, useParams } from 'react-router-dom';
+import { nodeService } from '@/services/nodeService';
+import axios from 'axios';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface ReceiveAssetForm {
   asset_id?: string;
@@ -26,14 +29,24 @@ export default function ReceiveAssetPage() {
   const [blind, setBlind] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const assetsData = useRLNState<ListAssetsResponse>('listassets');
-  const { fetchApi } = useRLNApi();
   const { asset_id } = useParams();
-  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const assetOptions = useMemo(() => {
     if (assetsData.status !== 'success' || !assetsData.data) return [];
     return [...(assetsData.data.nia ?? []), ...(assetsData.data.uda ?? []), ...(assetsData.data.cfa ?? [])];
   }, [assetsData.data]);
 
+  const asset = useMemo(() => {
+    if (!asset_id || !assetOptions.length) return null;
+    return assetOptions.find((a) => a.asset_id === asset_id);
+  }, [asset_id, assetOptions])
+
+  useEffect(() => {
+    if (!asset) {
+      setBlind(true);
+    }
+  }, [asset]);
+  console.log(assetOptions, assetsData)
   const {
     register,
     handleSubmit,
@@ -44,38 +57,33 @@ export default function ReceiveAssetPage() {
   });
   const navigate = useNavigate();
   const onSubmit = async (data: ReceiveAssetForm) => {
+    console.log('Submitting receive asset form:', data);
     try {
       const body: any = {
         duration_seconds: parseInt(data.expiration, 10),
       };
       if (!data.blind) {
-        body.asset_id = data.asset_id;
+        body.asset_id = asset?.asset_id;
         body.amount = data.amount;
       }
 
-    //   const { data: result, error } = await fetchApi<{ invoice: string }>('rgbinvoice', 'POST', body);
+      const res = await nodeService.rgbinvoice(body);
+      setInvoice(res.invoice);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.response?.statusText || 'Unknown error'
+        : 'Failed to connect to node';
 
-    const error = null; // Simulating no error for this example
-    const result={
-        invoice:'rgb:nkHbmy97-R4cjRCe-j~VvT~E-0UQ0OW8-jOCCW6O-EqeCq9M/RWhwUfTMpuP2Zfx1~j4nswCANGeJrYOqDcKelaMV4zU/RddcT/bc:utxob:v9tb4ND2-1~zE7KG-_1U9WyJ-Zv2r7P5-VWQvAqr-vK20bbh-tCAi9?assignment_name=assetOwner&expiry=1754401124&endpoints=rpcs://proxy.iriswallet.com/0.2/json-rpc'
-    }
-      if (error || !result?.invoice) {
-        // toast.error('Failed to generate invoice');
-        return;
-      }
-
-      setInvoice(result.invoice);
-    } catch (err) {
-    //   toast.error('Something went wrong generating the invoice');
+      setErrorMessage(`Error: ${message}`);
     }
   };
 
   const copyToClipboard = async () => {
     if (invoice) {
       await navigator.clipboard.writeText(invoice);
-    //   toast.success('Invoice copied to clipboard');
     }
   };
+
   const handleDone = () => {
     setInvoice(null);
     navigate(`/wallet/asset/${asset_id}`);
@@ -116,18 +124,25 @@ export default function ReceiveAssetPage() {
             {!blind && (
               <div className="space-y-2">
                 <Label htmlFor="asset_id">Asset</Label>
-                <Select onValueChange={(val) => setValue('asset_id', val)}>
-                  <SelectTrigger id="asset_id">
-                    <SelectValue placeholder="Select asset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assetOptions.map((a) => (
-                      <SelectItem key={a.asset_id} value={a.asset_id}>
-                        {a.ticker ?? a.name} ({a.asset_id.slice(0, 8)}...)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {asset && <div className="relative z-50 text-left">
+
+                  <div className="text-lg font-semibold">{asset.name}</div>
+                  <div className="text-sm text-muted-foreground break-all">{asset.asset_id}</div>
+                </div>}
+                {/* <Select onValueChange={(val) => setValue('asset_id', val)} > */}
+                {/* <Select onValueChange={console.log}>
+                    <SelectTrigger id="asset_id">
+                      <SelectValue placeholder="Select asset" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50">
+                      {assetOptions.map((a) => (
+                        <SelectItem key={a.asset_id} value={a.asset_id}>
+                          {a.ticker ?? a.name} ({a.asset_id.slice(0, 8)}…)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select> */}
+
                 {errors.asset_id && <p className="text-sm text-destructive">{errors.asset_id.message}</p>}
               </div>
             )}
@@ -151,21 +166,25 @@ export default function ReceiveAssetPage() {
 
             <div className="space-y-2">
               <Label htmlFor="expiration">Invoice Expiry</Label>
-              <Select onValueChange={(val) => setValue('expiration', val)} defaultValue="3600">
-                <SelectTrigger id="expiration">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3600">1 Hour</SelectItem>
-                  <SelectItem value="21600">6 Hours</SelectItem>
-                  <SelectItem value="86400">1 Day</SelectItem>
-                  <SelectItem value="172800">2 Days</SelectItem>
-                </SelectContent>
-              </Select>
+              <Tabs
+                defaultValue="3600"
+                onValueChange={(val) => setValue("expiration", val)}
+                className="w-full"
+              >
+                <TabsList className="grid grid-cols-4 w-full">
+                  <TabsTrigger value="3600">1 Hour</TabsTrigger>
+                  <TabsTrigger value="21600">6 Hours</TabsTrigger>
+                  <TabsTrigger value="86400">1 Day</TabsTrigger>
+                  <TabsTrigger value="172800">2 Days</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             <Button type="submit" disabled={isSubmitting}>Generate Invoice</Button>
           </form>
+          {errorMessage && (
+            <div className="text-sm text-destructive pt-2 mb-4">{errorMessage}</div>
+          )}
         </CardContent>
       </Card>
     </div>

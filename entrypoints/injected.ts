@@ -8,12 +8,8 @@ declare global {
 export default defineUnlistedScript(() => {
     console.log("Hello from injected.ts");
     let idCounter = 0;
-    let isEnabled = false;
   
     async function callWebLN(method: string, params?: any): Promise<any> {
-      if (!isEnabled && method !== 'enable') {
-        throw new Error('webln.enable() must be called first');
-      }
   
       return new Promise((resolve, reject) => {
         const id = ++idCounter;
@@ -24,7 +20,16 @@ export default defineUnlistedScript(() => {
           const res = event.data.weblnResponse;
           if (res?.id !== id) return;
           window.removeEventListener('message', handler);
-          res.error ? reject(new Error(res.error)) : resolve(res.result);
+          console.log(res)
+          if (res.error) {
+            const { message, type, code } = res.error;
+            const err = new Error(message || 'Unknown error');
+            (err as any).type = type;
+            (err as any).code = code;
+            reject(err);
+          } else {
+            resolve(res.result);
+          }
         };
   
         window.addEventListener('message', handler);
@@ -32,11 +37,8 @@ export default defineUnlistedScript(() => {
     }
   
     window.webln = {
-      enable: async () => {
-        const res = await callWebLN('enable');
-        isEnabled = true;
-        return res;
-      },
+      enable: () => callWebLN('enable'),
+      isEnabled: () => callWebLN('isEnabled'),
       getInfo: () => callWebLN('getInfo'),
       getBalance: () => callWebLN('getBalance'),
       makeInvoice: (args: { amount: number }) => callWebLN('makeInvoice', args),

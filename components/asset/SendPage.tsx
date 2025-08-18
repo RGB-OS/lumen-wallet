@@ -9,115 +9,213 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useState, useMemo } from 'react';
 import { useRLNState } from '@/providers/nodeProvider';
-import { ListAssetsResponse } from '@/types/rgb-types';
+import { InvoiceDecoded, ListAssetsResponse } from '@/types/rgb-types';
+import { nodeService } from '@/services/nodeService';
+import z from 'zod';
 
-interface SendAssetForm {
-    invoice: string;
-    amount: number;
-    fee: string;
-    donation: boolean;
-  }
-  
-  export default function SendAssetPage() {
-    const { asset_id } = useParams();
-    const navigate = useNavigate();
-    const [donation, setDonation] = useState(false);
-    const assetsData = useRLNState<ListAssetsResponse>('listassets');
-  
-    const asset = useMemo(() => {
-      if (assetsData.status !== 'success' || !assetsData.data || !asset_id) return null;
-      const all = [...(assetsData.data.nia ?? []), ...(assetsData.data.uda ?? []), ...(assetsData.data.cfa ?? [])];
-      return all.find((a) => a.asset_id === asset_id);
-    }, [assetsData.data, asset_id]);
-  
-    const {
-      register,
-      handleSubmit,
-      watch,
-      setError,
-      formState: { errors, isSubmitting }
-    } = useForm<SendAssetForm>({
-      defaultValues: { donation: false, fee: 'medium' },
-    });
-  
-    const onSubmit = async (data: SendAssetForm) => {
+// interface SendAssetForm {
+//   invoice: string;
+//   amount: number;
+//   fee: string;
+//   donation: boolean;
+// }
+const schema = z.object({
+  invoice: z.string().min(1, 'Invoice is required').startsWith('rgb:', 'Must start with rgb:'),
+  amount: z
+    .union([z.string(), z.number()])
+    .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+      message: 'Amount must be a positive number',
+    }),
+  fee: z.string(),
+  donation: z.boolean(),
+});
+type SendAssetForm = z.infer<typeof schema>;
+
+export default function SendAssetPage() {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<SendAssetForm>({
+    defaultValues: { donation: false, fee: 'medium' },
+  });
+  const { asset_id } = useParams();
+  const navigate = useNavigate();
+  const assetsData = useRLNState<ListAssetsResponse>('listassets');
+  const [donation, setDonation] = useState(false);
+  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null);
+  const [decodedInvoice, setDecodedInvoice] = useState<InvoiceDecoded | null>(null);
+  const [txid, setTxid] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const invoiceVal = watch('invoice');
+
+  const asset = useMemo(() => {
+    if (assetsData.status !== 'success' || !assetsData.data || !asset_id) return null;
+    const all = [...(assetsData.data.nia ?? []), ...(assetsData.data.uda ?? []), ...(assetsData.data.cfa ?? [])];
+    return all.find((a) => a.asset_id === asset_id);
+  }, [assetsData.data, asset_id]);
+
+  useEffect(() => {
+    const decode = async () => {
+      if (!invoiceVal) return;
+      if (!invoiceVal.startsWith('rgb:')) return;
       try {
-        // simulate API call
-  
-        console.log('Sending asset with:', data);
-        navigate(`/wallet/asset/${asset_id}`);
-      } catch (err) {
-        setError('invoice', { type: 'manual', message: 'Invalid RGB invoice' });
+        const data = await nodeService.decodergbinvoice({
+          invoice: invoiceVal,
+        })
+        if (!data) {
+          setErrorMsg('Invalid RGB invoice format');
+          return;
+        }
+
+        setDecodedInvoice(data);
+
+        if (data.asset_id === asset_id && data.assignment?.value) {
+          const value = data.assignment.value;
+          setValue('amount', value);
+          setPrefilledAmount(value);
+        } else {
+          setPrefilledAmount(null);
+        }
+        setErrorMsg(null);
+      } catch (err: any) {
+        console.error('Failed to decode invoice:', err);
+        setDecodedInvoice(null);
+        setPrefilledAmount(null);
+        setErrorMsg('Failed to decode RGB invoice');
       }
     };
-  
-    if (!asset) return <div className="p-6 text-destructive">Asset not found</div>;
-  
-    const formattedBalance = (asset.balance.spendable / Math.pow(10, asset.precision)).toLocaleString();
-  
+
+    decode();
+  }, [invoiceVal, asset_id, setValue]);
+
+
+  const onSubmit = async (data: SendAssetForm) => {
+    console.log('Submitting send asset form:', data);
+    if (!decodedInvoice) {
+      setError('invoice', { type: 'manual', message: 'Invalid or missing decoded invoice' });
+      return;
+    }
+
+    try {
+
+      const decodeAssignment = decodedInvoice?.assignment
+      const response = await nodeService.sendasset({
+        assignment: {
+          type: "Fungible",
+          value: +data.amount as number, // Ensure amount is a number
+        },
+        asset_id: decodedInvoice.asset_id,
+        recipient_id: decodedInvoice.recipient_id,
+        transport_endpoints: decodedInvoice.transport_endpoints,
+        min_confirmations: 1,
+        donation: data.donation,
+        fee_rate: data.fee === 'low' ? 2 : data.fee === 'high' ? 10 : 5,
+        skip_sync: false,
+      })
+
+
+      setTxid(response.txid);
+      setErrorMsg(null);
+    } catch (err: any) {
+      console.error('Send asset failed:', err);
+      setError('invoice', { type: 'manual', message: 'Send asset failed' });
+      setTxid(null);
+    }
+  };
+  const handleDone = () => {
+    setTxid(null);
+    navigate(`/wallet/asset/${asset_id}`);
+  }
+  if (!asset) return <div className="p-6 text-destructive">Asset not found</div>;
+
+  const formattedBalance = (asset.balance.spendable / Math.pow(10, asset.precision)).toLocaleString();
+
+
+  if (txid) {
     return (
-      <div className="min-h-screen w-full bg-background ">
+      <div className="p-6 space-y-4">
         <Card>
-          <CardContent className=" space-y-2">
-            <div className="text-2xl font-semibold">{asset.name}</div>
-            <div className="text-sm text-muted-foreground break-all">{asset.asset_id}</div>
-            <div className="text-xl font-bold">
-              {formattedBalance} {asset.ticker ?? '—'}
-            </div>
+          <CardContent className="space-y-2">
+            <h2 className="text-xl font-bold">✅ Transaction Sent</h2>
+            <p className="break-all">Tx ID: {txid}</p>
+            <Button onClick={handleDone}>Done</Button>
           </CardContent>
-        </Card>
-        <Card>
-        <CardContent className=" space-y-2">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="invoice">Invoice</Label>
-            <Input
-              id="invoice"
-              placeholder="Enter RGB invoice..."
-              {...register('invoice', {
-                required: 'Invoice is required',
-                validate: value => value.startsWith('rgb:') || 'Invalid RGB invoice'
-              })}
-            />
-            {errors.invoice && <p className="text-destructive text-sm">{errors.invoice.message}</p>}
-          </div>
-  
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="any"
-              placeholder="0.00"
-              {...register('amount', {
-                required: 'Amount is required',
-                min: { value: 0.00000001, message: 'Amount must be greater than zero' },
-              })}
-            />
-            {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
-          </div>
-  
-          <div className="space-y-2">
-            <Label>Fee</Label>
-            <Tabs defaultValue="medium" onValueChange={(val) => (watch('fee') === val)}>
-              <TabsList>
-                <TabsTrigger value="low">Low</TabsTrigger>
-                <TabsTrigger value="medium">Medium</TabsTrigger>
-                <TabsTrigger value="high">High</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-  
-          <div className="flex items-center space-x-2">
-            <Switch id="donation" checked={donation} onCheckedChange={setDonation} />
-            <Label htmlFor="donation">Donation</Label>
-          </div>
-  
-          <Button type="submit" disabled={isSubmitting}>Send</Button>
-        </form>
-        </CardContent>
         </Card>
       </div>
     );
   }
-  
+  return (
+    <div className="min-h-screen w-full bg-background ">
+      <Card>
+        <CardContent className=" space-y-2">
+          <div className="text-2xl font-semibold">{asset.name}</div>
+          <div className="text-sm text-muted-foreground break-all">{asset.asset_id}</div>
+          <div className="text-xl font-bold">
+            {formattedBalance} {asset.ticker ?? '—'}
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="invoice">Invoice</Label>
+              <Input
+                id="invoice"
+                placeholder="Enter RGB invoice..."
+                {...register('invoice', {
+                  required: 'Invoice is required',
+                  validate: value => value.startsWith('rgb:') || 'Invalid RGB invoice',
+                })}
+              />
+              {errors.invoice && <p className="text-destructive text-sm">{errors.invoice.message}</p>}
+              {errorMsg && <p className="text-destructive text-sm">{errorMsg}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="any"
+                disabled={prefilledAmount !== null}
+                {...register('amount', {
+                  required: 'Amount is required',
+                  min: { value: 0.00000001, message: 'Amount must be greater than zero' },
+                })}
+              />
+              {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Fee</Label>
+              <Tabs defaultValue="medium" onValueChange={(val) => setValue('fee', val)}>
+                <TabsList>
+                  <TabsTrigger value="low">Low</TabsTrigger>
+                  <TabsTrigger value="medium">Medium</TabsTrigger>
+                  <TabsTrigger value="high">High</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch id="donation" checked={donation} onCheckedChange={(val) => {
+                setDonation(val);
+                setValue('donation', val);
+              }} />
+              <Label htmlFor="donation">Donation</Label>
+            </div>
+
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending...' : 'Send'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

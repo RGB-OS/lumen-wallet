@@ -1,3 +1,4 @@
+import { authService } from "./authService";
 import { nodeService } from "./nodeService";
 
 interface GetInfoResponse {
@@ -31,41 +32,53 @@ class WalletService {
     async enable(origin: string) {
         console.log('Enabling WebLN for origin:', origin);
         console.log('Enabled origins:', this.enabledOrigins);
-        if (this.enabledOrigins.has(origin)) return { alias: 'ThunderStack' };
-        console.log('Requesting user approval for origin:', origin);
-        const url = browser.runtime.getURL(`/approval.html?origin=${encodeURIComponent(origin)}`);
+        if (this.enabledOrigins.has(origin)) {
+            const authorized = await authService.isAuthenticated();
+            if (!authorized) {
+                console.warn('User is not authenticated, opening login popup');
+                await this.openLoginPopup();
+            }
+            return 
+        }
+        console.log('Requesting user approval for origin:', origin,`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
+        const url = browser.runtime.getURL(`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
 
         const popup = await browser.windows.create({
             url,
             type: 'popup',
-            width: 360,
-            height: 400,
+            width: 420,
+            height: 620,
         });
 
-        return new Promise((resolve) => {
+        const approved =await new Promise((resolve) => {
             const handler = (response: any, _sender: any, sendResponse: any) => {
                 console.log('Received approval response:', response);
                 if (response.type === 'webln-approval-response') {
                     browser.runtime.onMessage.removeListener(handler);
-                    if (response.approved) {
-                        this.enabledOrigins.add(origin);
-                        resolve({ result: true });
-                    } else {
-                        resolve({ error: 'User denied access' });
-                    }
+                    resolve(response.approved);
                 }
             };
 
             browser.runtime.onMessage.addListener(handler);
             console.log('Waiting for user approval...');
         });
+        if(!approved){
+            throw new WalletPermissionError(origin);
+        }
+        this.enabledOrigins.add(origin);
+        const authorized = await authService.isAuthenticated();
+        if (!authorized) {
+            console.warn('User is not authenticated, opening login popup');
+            await this.openLoginPopup();
+        }
+        return
     }
     /**
      * Check if the origin is enabled for WebLN access
      * @param origin The origin to check
      * @throws Error if the origin is not enabled
      */
-    isEnabled(origin: string) {
+    async isEnabled(origin: string) {
         if (!this.enabledOrigins.has(origin)) {
             // throw new Error('webln.enable() not called for this origin');
             return false;
@@ -80,7 +93,13 @@ class WalletService {
      * @throws Error if the node info cannot be retrieved
      */
     async getInfo(origin: string = this.trustedOrigin): Promise<GetInfoResponse> {
-        this.isEnabled(origin);
+        console.log('Getting node info for origin:', origin);
+        if (!this.enabledOrigins.has(origin)) {
+            throw new WalletPermissionError(origin);
+        }
+        const session = await authService.isAuthenticated();
+        if (!session) throw new WalletPermissionError('User not authenticated');
+    
         try {
             const res = await nodeService.nodeinfo();
             const { data } = res;
@@ -89,16 +108,20 @@ class WalletService {
                     alias: 'ThunderStack',
                     pubkey: data.pubkey,
                 },
-                methods: ['makeInvoice', 'sendPayment', 'keysend', 'getInfo', 'request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets']
+                methods: ['makeInvoice', 'sendPayment', 'keysend', 'getInfo', 'request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
             }
-        } catch (e) {
+        } catch (e:any) {
             console.error('Failed to get node info:', e);
-            throw new Error('Failed to get info: ');
+            throw new WalletNodeError('getInfo', e?.message);
         }
     }
 
     async getBalance(origin: string = this.trustedOrigin): Promise<BalanceResponse> {
-        this.isEnabled(origin);
+        if (!this.enabledOrigins.has(origin)) {
+            throw new WalletPermissionError(origin);
+        }
+        const session = await authService.isAuthenticated();
+        if (!session) throw new WalletPermissionError('User not authenticated');
         try {
             const res = await nodeService.btcbalance();
             return {
@@ -114,6 +137,8 @@ class WalletService {
         if (!this.enabledOrigins.has(origin)) {
             throw new WalletPermissionError(origin);
         }
+        const session = await authService.isAuthenticated();
+        if (!session) throw new WalletPermissionError('User not authenticated');
         console.log(`[walletService] Handling request: ${method}`, params);
         try {
             switch (method) {
@@ -133,6 +158,8 @@ class WalletService {
                     return await nodeService.listtransfers(params);
                 case 'sendasset':
                     return await nodeService.sendasset(params);
+                case 'refreshtransfers':
+                    return await nodeService.refreshtransfers(params);
                 default:
                     throw new WalletError(`Unknown request method: ${method}`);
             }
@@ -141,6 +168,30 @@ class WalletService {
             throw new WalletNodeError(method, e?.message);
         }
     }
+
+    private async openLoginPopup(): Promise<void> {
+        const loginUrl = browser.runtime.getURL('/popup.html#/login?from=external');
+        await browser.windows.create({
+          url: loginUrl,
+          type: 'popup',
+          width: 420,
+          height: 620,
+        });
+    
+        await new Promise<void>((resolve, reject) => {
+          const handler = (msg: any) => {
+            if (msg.type === 'wallet-auth-response') {
+              browser.runtime.onMessage.removeListener(handler);
+              if (msg.success) {
+                resolve();
+              } else {
+                reject(new WalletPermissionError('Wrong credentials'));
+              }
+            }
+          };
+          browser.runtime.onMessage.addListener(handler);
+        });
+      }
 }
 
 export const walletService = new WalletService();

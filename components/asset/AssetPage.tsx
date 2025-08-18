@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw } from 'lucide-react';
 import { ListAssetsResponse, RgbTransfer } from '@/types/rgb-types';
 import { useRLNApi, useRLNState } from '@/providers/nodeProvider';
+import { nodeService } from '@/services/nodeService';
 
 export const AssetPage = () => {
   const { asset_id } = useParams();
@@ -34,6 +35,7 @@ console.log('AssetPage transfersData', transfersData, 'txStatus', txStatus, 'txE
 
   const fetchTransfers = async () => {
     console.log('Fetching transfers for asset_id:', asset_id);
+    await nodeService.refreshtransfers();
     if (!asset_id) return;
     await fetchApi<{ transfers: RgbTransfer[] }>('listtransfers', 'POST', { asset_id });
   }

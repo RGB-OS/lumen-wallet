@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { storage } from '#imports';
+import { authService } from '@/services/authService';
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(null)
@@ -7,22 +8,8 @@ export function useAuth() {
 
   useEffect(() => {
     const fetchToken = async () => {
-      const storedToken = await storage.getItem<string>('local:access-token')
-      if (storedToken) {
-        const [, payloadBase64] = storedToken.split('.')
-        const payloadJson = atob(payloadBase64)
-        const payload = JSON.parse(payloadJson)
-        const now = Date.now() / 1000 // in seconds
-        if (payload.exp && payload.exp < now) {
-          console.warn('Token expired')
-          await storage.removeItem('local:access-token')
-          setToken(null)
-        } else {
-          setToken(storedToken)
-        }
-      }else{
-      setToken(null)
-    }
+      const storedToken = await authService.getToken()
+      setToken(storedToken)
       setIsLoading(false)
     }
     fetchToken()

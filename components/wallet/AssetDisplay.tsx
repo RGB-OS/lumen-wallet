@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
-import { apiService } from "@/services/api";
 import { satoshisToBTC } from "@/utils";
 import { Asset, BTCBalance, ListAssetsResponse } from "@/types/rgb-types";
 import { useRLNState } from "@/providers/nodeProvider";

@@ -47,15 +47,24 @@ export interface Assignment {
   type: 'Fungible' | string  // You can make this a union if there are other types
   value: number
 }
-
-export interface InvoiceDecoded {
+interface InvoiceBase {
   recipient_id: string
-  asset_schema: 'Nia' | 'Cfa' | 'Uda' | string
+ 
   asset_id: string
   assignment: Assignment
+  transport_endpoints: string[]
+}
+export interface InvoiceDecoded extends InvoiceBase {
+  asset_schema: 'Nia' | 'Cfa' | 'Uda' | string
   network: 'Regtest' | 'Mainnet' | 'Testnet' | string
   expiration_timestamp: number
-  transport_endpoints: string[]
+ 
+}
+export interface SendRGBAsset extends InvoiceBase{
+donation: boolean;
+fee_rate:number;
+min_confirmations: number;
+skip_sync: boolean;
 }
 
 export interface ListTransfersResponse {
