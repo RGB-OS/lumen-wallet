@@ -33,9 +33,12 @@ function App() {
           <Route path="/" element={<ConnectNode />} />
           <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
             <Route index element={<WalletDashboard />} />
+            <Route path="send" element={<SendAssetPage />} />
             <Route path="send/:asset_id" element={<SendAssetPage />} />
             <Route path="asset/:asset_id" element={<AssetPage />} />
+           
             <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
+            <Route path="receive" element={<ReceiveAssetPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

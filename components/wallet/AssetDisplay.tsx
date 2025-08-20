@@ -92,7 +92,7 @@ export const AssetDisplay = () => {
 
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-1">
       {/* Asset List */}
 
       {loading ? (
@@ -112,23 +112,23 @@ export const AssetDisplay = () => {
           ))}
         </div>
       ) : (
-        <div className="">
+        <div className="space-y-1 px-1">
           {assets.map((asset) => (
-            <Link to={`/wallet/asset/${asset.asset_id}`} key={asset.symbol} className=" bg-card flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-ponter">
+            <Link to={`/wallet/asset/${asset.asset_id}`} key={asset.symbol} className=" bg-card flex items-center justify-between p-4 border border-border rounded-lg hover:border-foreground/20  transition-colors cursor-ponter">
               <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 bg-gradient-to-r from-bitcoin to-accent rounded-full flex items-center justify-center text-lg">
-                  U
+                <div className="h-10 w-10 bg-gradient-to-r from-[#EDEDE9] to-accent rounded-full flex items-center justify-center text-lg text-foreground uppercase">
+                  {asset.symbol.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-medium text-left">{asset.name}</p>
-                  <p className="text-sm text-left text-muted-foreground">{asset.symbol}</p>
+                  <p className="font-medium text-left text-gray-dark">{asset.name}</p>
+                  <p className="text-sm text-left text-foreground">{asset.symbol}</p>
                 </div>
               </div>
 
               <div className="text-right">
-                <p className="font-medium">{asset.balance} {asset.symbol}</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm text-muted-foreground">{asset.value}</p>
+              
+                <div className="">
+                  <p className="text-sm text-gray-dark">{asset.value}</p>
                   {/* <Badge variant={asset.change24h >= 0 ? "default" : "destructive"} className="text-xs">
                         {asset.change24h >= 0 ? (
                           <TrendingUp className="h-3 w-3 mr-1" />
@@ -138,6 +138,7 @@ export const AssetDisplay = () => {
                         {Math.abs(asset.change24h)}%
                       </Badge> */}
                 </div>
+                <p className="font-medium text-foreground">{asset.balance} {asset.symbol}</p>
               </div>
             </Link>
           ))}

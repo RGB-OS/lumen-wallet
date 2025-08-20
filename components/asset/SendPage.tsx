@@ -13,12 +13,6 @@ import { InvoiceDecoded, ListAssetsResponse } from '@/types/rgb-types';
 import { nodeService } from '@/services/nodeService';
 import z from 'zod';
 
-// interface SendAssetForm {
-//   invoice: string;
-//   amount: number;
-//   fee: string;
-//   donation: boolean;
-// }
 const schema = z.object({
   invoice: z.string().min(1, 'Invoice is required').startsWith('rgb:', 'Must start with rgb:'),
   amount: z
@@ -149,8 +143,8 @@ export default function SendAssetPage() {
     );
   }
   return (
-    <div className="min-h-screen w-full bg-background ">
-      <Card>
+    <div className="flex-1 w-full h-full space-y-6 px-6 w-full">
+      <Card className='rounded-lg shadow-md'>
         <CardContent className=" space-y-2">
           <div className="text-2xl font-semibold">{asset.name}</div>
           <div className="text-sm text-muted-foreground break-all">{asset.asset_id}</div>
@@ -159,9 +153,10 @@ export default function SendAssetPage() {
           </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <Card className='rounded-lg shadow-md'>
+        <CardContent className="space-y-6">
+        
             <div className="space-y-2">
               <Label htmlFor="invoice">Invoice</Label>
               <Input
@@ -193,8 +188,8 @@ export default function SendAssetPage() {
 
             <div className="space-y-2">
               <Label>Fee</Label>
-              <Tabs defaultValue="medium" onValueChange={(val) => setValue('fee', val)}>
-                <TabsList>
+              <Tabs className="w-full" defaultValue="medium" onValueChange={(val) => setValue('fee', val)}>
+                <TabsList className='w-full'>
                   <TabsTrigger value="low">Low</TabsTrigger>
                   <TabsTrigger value="medium">Medium</TabsTrigger>
                   <TabsTrigger value="high">High</TabsTrigger>
@@ -210,12 +205,16 @@ export default function SendAssetPage() {
               <Label htmlFor="donation">Donation</Label>
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send'}
-            </Button>
-          </form>
+           
+          
         </CardContent>
       </Card>
+       {errorMsg && (
+        <div className="text-sm text-destructive pt-2 mb-4">{errorMsg}</div>)}
+      <Button type="submit" disabled={isSubmitting} className='absolute bottom-4 left-4 right-4 font-semibold h-10 '>
+              {isSubmitting ? 'Sending...' : 'Send'}
+            </Button>
+      </form>
     </div>
   );
 }

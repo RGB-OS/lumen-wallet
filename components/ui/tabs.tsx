@@ -24,7 +24,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]",
+        "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center p-[3px]",
         className
       )}
       {...props}
@@ -41,16 +41,16 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       className={cn(
         // Base styles
-  "inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] text-foreground dark:text-muted-foreground focus-visible:ring-[3px] focus-visible:outline-1 focus-visible:border-ring focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex  h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] text-[#8E8E8E] font-semibold dark:text-muted-foreground focus-visible:ring-[3px] focus-visible:outline-1 focus-visible:border-ring focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 
   // Border bottom only
-  "border-b-2",
+  "border-b-2 border-[#F0F0F0]",
 
   // Inactive = transparent bottom border
-  "border-transparent",
+  // "border-transparent",
 
   // Active tab styles
-  "data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-primary-foreground"
+  "data-[state=active]:border-[#8E8E8E] data-[state=active]:text-foreground data-[state=active]:font-semibold dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-primary-foreground"
 , className
       )}
       {...props}

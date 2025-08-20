@@ -100,7 +100,14 @@ export const ConnectNode = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-card">
+     
       <Card className="w-full max-w-md border-none shadow-none">
+      <div className="-mt-24 bg-opacity-40 z-10 inset-0 h-full w-full " >
+                <div className="flex items-center space-x-3 justify-self-center mt-8">
+                    {/* <span className="pl-2 font-fixel  text-2xl font-semibold font-fixel leading-loose pt-2">Lumen</span> */}
+                    <Icons.thunderGradient className="text-white h-24 w-24" />
+                </div>
+            </div>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Connect Node</CardTitle>
           <CardDescription>
@@ -114,13 +121,13 @@ export const ConnectNode = () => {
               <Input
                 id="nodeEndpoint"
                 type="url"
-                className=""
+                className="rounded-lg"
                 placeholder="https://your-node-endpoint.com"
                 {...register("nodeEndpoint")}
                 disabled={isLoading}
               />
               {errors.nodeEndpoint && (
-                <p className="text-sm text-destructive">{errors.nodeEndpoint.message}</p>
+                <p className="text-sm text-destructive   ">{errors.nodeEndpoint.message}</p>
               )}
             </div>
 
@@ -138,7 +145,7 @@ export const ConnectNode = () => {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full font-semibold h-12" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

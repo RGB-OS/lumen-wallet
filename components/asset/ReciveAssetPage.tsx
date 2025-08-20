@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { nodeService } from '@/services/nodeService';
 import axios from 'axios';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { set } from 'zod';
 
 interface ReceiveAssetForm {
   asset_id?: string;
@@ -27,7 +28,7 @@ interface ReceiveAssetForm {
 
 export default function ReceiveAssetPage() {
   const [blind, setBlind] = useState(false);
-  const [invoice, setInvoice] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<string | null>('rgb:5ALF~YtO-LrLUGxh-jaDm7ME-aNvvOL~-mNT48qM-NQ3Y4gM/RWhwUfTMpuP2Zfx1~j4nswCANGeJrYOqDcKelaMV4zU/~/bcrt:utxob:iKon~sZV-0LPPDWD-mmgLMnN-9_10l4D-LTPXdsK-zx~6Zli-7cHCr?assignment_name=assetOwner&expiry=1755549817&endpoints=rpcs://proxy.iriswallet.com/0.2/json-rpc');
   const assetsData = useRLNState<ListAssetsResponse>('listassets');
   const { asset_id } = useParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export default function ReceiveAssetPage() {
   const navigate = useNavigate();
   const onSubmit = async (data: ReceiveAssetForm) => {
     console.log('Submitting receive asset form:', data);
+    setErrorMessage(null);
     try {
       const body: any = {
         duration_seconds: parseInt(data.expiration, 10),
@@ -70,10 +72,19 @@ export default function ReceiveAssetPage() {
       const res = await nodeService.rgbinvoice(body);
       setInvoice(res.invoice);
     } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.response?.statusText || 'Unknown error'
-        : 'Failed to connect to node';
 
+      let message = 'Failed to connect to node';
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data;
+        // Check known shape
+        if (typeof data === 'object' && data !== null) {
+          message =
+            data.error ||  // your custom backend error string
+            data.message ||  // fallback (if using other APIs)
+            error.response?.statusText ||
+            'Unknown error';
+        }
+      }
       setErrorMessage(`Error: ${message}`);
     }
   };
@@ -92,32 +103,40 @@ export default function ReceiveAssetPage() {
 
   if (invoice) {
     return (
-      <div className="min-h-screen w-full bg-background">
-        <Card>
+      <div className="flex-1 w-full h-full space-y-6 px-6 w-full">
+        <Card className='rounded-lg shadow-md'>
           <CardContent className="p-6 space-y-4 flex flex-col items-center">
             <div className="text-lg font-semibold">Your RGB Invoice</div>
-            <QRCode value={invoice} className="h-40 w-40" />
+            <QRCode value={invoice} className="h-full w-full max-w-64 max-h-64" />
             <div className="w-full flex items-center gap-2">
               <Input readOnly value={invoice} className="w-full font-mono" />
-              <Button size="icon" variant="outline" onClick={copyToClipboard}>
-                <Copy className="w-4 h-4" />
+              <Button size="icon" variant="outline" className='size-12' onClick={copyToClipboard}>
+                <Copy className="w-5 h-5" />
               </Button>
             </div>
-            <Button onClick={handleDone} className='w-full'>DONE</Button>
+           
           </CardContent>
         </Card>
-
+        <Button onClick={handleDone} className='absolute bottom-4 left-4 right-4 font-semibold h-10'>DONE</Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-background p-6 space-y-6">
-      <Card>
-        <CardContent className="p-6 space-y-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 w-full h-full space-y-6 px-6 w-full">
+        <Card className='rounded-lg shadow-md'>
+          <CardContent className="px-6 space-y-6">
+
             <div className="flex items-center space-x-2">
-              <Switch id="blind" checked={blind} onCheckedChange={(v) => { setBlind(v); setValue('blind', v); }} />
+              <Switch
+                disabled={!asset_id}
+                id="blind" checked={blind}
+                onCheckedChange={(v) => {
+                  if (!asset_id) return; // Prevent toggling when disabled
+                  setBlind(v);
+                  setValue('blind', v);
+                }}
+              />
               <Label htmlFor="blind">Blind receive</Label>
             </div>
 
@@ -180,13 +199,16 @@ export default function ReceiveAssetPage() {
               </Tabs>
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>Generate Invoice</Button>
-          </form>
-          {errorMessage && (
-            <div className="text-sm text-destructive pt-2 mb-4">{errorMessage}</div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+
+
+          </CardContent>
+
+        </Card>
+        {errorMessage && (
+        <div className="text-sm text-destructive pt-2 mb-4">{errorMessage}</div>
+      )}
+        <Button className='absolute bottom-4 left-4 right-4 font-semibold h-10 ' type="submit" disabled={isSubmitting}>Generate Invoice</Button>
+      </form>
   );
 }
