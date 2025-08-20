@@ -1,4 +1,4 @@
-# WebLN Provider – Developer Documentation (Chrome/WXT)
+# WebLN RGB LN Provider
 
 ## Overview
 
