@@ -235,20 +235,6 @@ async function connectAndFetch() {
 
 ---
 
-## Background Service (`walletService`) Contract
-
-```ts
-interface WalletService {
-  enable(origin: string): Promise<void>;
-  isEnabled(origin: string): Promise<boolean>;
-  getInfo(origin: string): Promise<GetInfoResponse>;
-  getBalance(origin: string): Promise<BalanceResponse>;
-  handleCustomRequest(origin: string, method: string, params?: any): Promise<unknown>;
-}
-```
-
----
-
 ## Changelog (Provider API)
 
 * **v0.1.0**: Initial release with `enable`, `isEnabled`, `getInfo`, `getBalance`, `request` mapped to `walletService` methods.
