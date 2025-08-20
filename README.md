@@ -8,7 +8,7 @@ This extension injects a **WebLN provider** into web pages (via `window.webln`) 
 * `webln.isEnabled()`
 * `webln.getInfo()`
 * `webln.getBalance()`
-* `webln.request(method, params)` – generic passthrough for custom node APIs
+* `webln.request(method, params)` – generic passthrough for RGB node APIs
 
 > Notes
 >
