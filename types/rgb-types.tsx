@@ -49,7 +49,7 @@ export interface Assignment {
 }
 interface InvoiceBase {
   recipient_id: string
- 
+
   asset_id: string
   assignment: Assignment
   transport_endpoints: string[]
@@ -58,13 +58,13 @@ export interface InvoiceDecoded extends InvoiceBase {
   asset_schema: 'Nia' | 'Cfa' | 'Uda' | string
   network: 'Regtest' | 'Mainnet' | 'Testnet' | string
   expiration_timestamp: number
- 
+
 }
-export interface SendRGBAsset extends InvoiceBase{
-donation: boolean;
-fee_rate:number;
-min_confirmations: number;
-skip_sync: boolean;
+export interface SendRGBAsset extends InvoiceBase {
+  donation: boolean;
+  fee_rate: number;
+  min_confirmations: number;
+  skip_sync: boolean;
 }
 
 export interface ListTransfersResponse {
@@ -77,94 +77,105 @@ export enum TransferStatus {
   SETTLED,
   FAILED,
 }
-export interface NetworkInfoResponse{
+export interface NetworkInfoResponse {
   network: string,
   height: number
 }
-export interface AddressResponse{
+export interface AddressResponse {
   address: string;
 }
 export interface BTCBalance {
-    vanilla: {
-      settled: number;
-      future: number;
-      spendable: number;
-    };
-    colored: {
-      settled: number;
-      future: number;
-      spendable: number;
-    };
-  }
-  
-  export interface Asset {
-    asset_id: string;
-    symbol: string;
-    name: string;
-    balance: string;
-    value: string;
-    change24h: number;
-    icon: string;
-  }
-
-  export interface AssetBalance {
+  vanilla: {
     settled: number;
     future: number;
     spendable: number;
-    offchain_outbound: number;
-    offchain_inbound: number;
-  }
-  
-  export interface AssetMedia {
-    file_path: string;
-    mime: string;
-  }
-  
-  export interface AssetBase {
-    asset_id: string;
-    name: string;
-    details: string;
-    precision: number;
-    issued_supply: number;
-    timestamp: number;
-    added_at: number;
-    balance: AssetBalance;
-    media: AssetMedia;
-  }
-  
-  export interface UdaAttachment {
-    file_path: string;
-    digest: string;
-    mime: string;
-  }
-  
-  export interface UdaToken {
-    index: number;
-    ticker: string;
-    name: string;
-    details: string;
-    embedded_media: boolean;
-    media: AssetMedia;
-    attachments: Record<string, UdaAttachment>;
-    reserves: boolean;
-  }
-  
-  export interface NiaAsset extends AssetBase {
-    ticker: string;
-  }
-  
-  export interface UdaAsset extends AssetBase {
-    ticker: string;
-    token: UdaToken;
-  }
-  
-  export interface CfaAsset extends AssetBase {
-    ticker: string;// TODO: clirify if this is correct
-  }
-  
-  export interface ListAssetsResponse {
-    nia: NiaAsset[];
-    uda: UdaAsset[];
-    cfa: CfaAsset[];
-  }
-  
+  };
+  colored: {
+    settled: number;
+    future: number;
+    spendable: number;
+  };
+}
+
+export interface Asset {
+  asset_id: string;
+  symbol: string;
+  name: string;
+  balance: string;
+  value: string;
+  change24h: number;
+  icon: string;
+}
+
+export interface AssetBalance {
+  settled: number;
+  future: number;
+  spendable: number;
+  offchain_outbound: number;
+  offchain_inbound: number;
+}
+
+export interface AssetMedia {
+  file_path: string;
+  mime: string;
+}
+
+export interface AssetBase {
+  asset_id: string;
+  name: string;
+  details: string;
+  precision: number;
+  issued_supply: number;
+  timestamp: number;
+  added_at: number;
+  balance: AssetBalance;
+  media: AssetMedia;
+}
+
+export interface UdaAttachment {
+  file_path: string;
+  digest: string;
+  mime: string;
+}
+
+export interface UdaToken {
+  index: number;
+  ticker: string;
+  name: string;
+  details: string;
+  embedded_media: boolean;
+  media: AssetMedia;
+  attachments: Record<string, UdaAttachment>;
+  reserves: boolean;
+}
+
+export interface NiaAsset extends AssetBase {
+  ticker: string;
+}
+
+export interface UdaAsset extends AssetBase {
+  ticker: string;
+  token: UdaToken;
+}
+
+export interface CfaAsset extends AssetBase {
+  ticker: string;// TODO: clirify if this is correct
+}
+
+export interface ListAssetsResponse {
+  nia: NiaAsset[];
+  uda: UdaAsset[];
+  cfa: CfaAsset[];
+}
+
+export interface CreateUTXOsRequest {
+  up_to?: boolean,
+  num: number,
+  size?: number,
+  fee_rate?: number,
+  skip_sync?: boolean 
+}
+
+export interface CreateUTXOsResponse {
+
+}

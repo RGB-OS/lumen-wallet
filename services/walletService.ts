@@ -158,6 +158,8 @@ class WalletService {
                     return await nodeService.listtransfers(params);
                 case 'sendasset':
                     return await nodeService.sendasset(params);
+                case 'createutxos':
+                    return await nodeService.createutxos(params);
                 case 'refreshtransfers':
                     return await nodeService.refreshtransfers(params);
                 default:

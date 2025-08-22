@@ -1,5 +1,5 @@
 import api from './api';
-import { AddressResponse, BTCBalance, InvoiceDecoded, ListTransfersResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
+import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListTransfersResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
     asset_id: string | undefined;
@@ -52,7 +52,7 @@ class NodeService {
         return res.data;
     }
 
-    async rgbinvoice(params?: RGBInvoiceRequest) {
+    async rgbinvoice<RgbInvoiceResponse>(params?: RGBInvoiceRequest) {
         const {
             asset_id,
             amount,
@@ -73,7 +73,7 @@ class NodeService {
         return res.data;
     }
 
-    async sendasset(params: SendRGBAsset) {
+    async sendasset<TXIdResponse>(params: SendRGBAsset) {
         const {
             asset_id,
             recipient_id,
@@ -97,7 +97,7 @@ class NodeService {
             min_confirmations,
             skip_sync
         });
-        
+
         return res.data;
     }
     async refreshtransfers(params?: { skip_sync?: boolean }) {
@@ -106,6 +106,21 @@ class NodeService {
         } = params ?? {};
 
         const res = await api.post('/refreshtransfers', { skip_sync });
+        return res.data;
+    }
+
+    async createutxos(params: CreateUTXOsRequest) {
+        const { up_to = false, num, size = 1000, fee_rate = 5, skip_sync = false } = params;
+        if (!num) {
+            throw new Error('Missing required parameters for createutxos');
+        }
+        const res = await api.post('/createutxos', {
+            up_to,
+            num,
+            size,
+            fee_rate,
+            skip_sync
+        });
         return res.data;
     }
 }

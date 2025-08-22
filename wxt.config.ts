@@ -4,6 +4,9 @@ import path from "path";
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   manifest: {
+    action: {
+      default_title: 'Lumen Wallet',
+    },
     permissions: ['storage'],
     web_accessible_resources: [
       {
@@ -15,7 +18,7 @@ export default defineConfig({
   webExt: {
     startUrls: ["https://wxt.dev"],
   },
-  modules: ['@wxt-dev/module-react'],
+  modules: ['@wxt-dev/module-react','@wxt-dev/auto-icons'],
   vite: () => ({
     plugins: [tailwindcss()],
   }),
