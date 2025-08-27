@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,16 @@ import { ListAssetsResponse, RgbTransfer } from '@/types/rgb-types';
 import { useRLNApi, useRLNState } from '@/providers/nodeProvider';
 import { nodeService } from '@/services/nodeService';
 import { twMerge } from 'tailwind-merge';
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerHeader, 
+  DrawerTitle 
+} from '@/components/ui/drawer';
+import { TransactionDetails } from './TransactionDetails';
+import { formatAddress } from '@/utils';
+import { Icons } from '@/components/icons';
+import { useDrawer } from '@/hooks/useDrawer';
 
 const TransferKind: any = {
   Issuance: Icons.plus,
@@ -34,6 +44,8 @@ export const AssetPage = () => {
   const { asset_id } = useParams();
   const key = `listtransfers:${JSON.stringify({ asset_id: asset_id })}`;
   const { fetchApi } = useRLNApi();
+  const [selectedTransaction, setSelectedTransaction] = useState<RgbTransfer | null>(null);
+  const { open, setOpen } = useDrawer();
 
   const assetsData = useRLNState<ListAssetsResponse>('listassets');
   const {
@@ -61,6 +73,17 @@ export const AssetPage = () => {
     if (!asset_id) return;
     await fetchApi<{ transfers: RgbTransfer[] }>('listtransfers', 'POST', { asset_id });
   }
+
+  const handleTransactionClick = (transaction: RgbTransfer) => {
+    setSelectedTransaction(transaction);
+    setOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setOpen(false);
+    setSelectedTransaction(null);
+  };
+
   useEffect(() => {
     if (!asset_id) return;
     fetchTransfers()
@@ -141,7 +164,11 @@ export const AssetPage = () => {
               const formattedValue = tx.requested_assignment?.value ? (
                 tx.requested_assignment?.value / Math.pow(10, asset.precision)
               ).toLocaleString() : tx.requested_assignment?.value;
-              return <Link to={`/wallet/tx/${tx.idx}`} key={tx.idx} className=" bg-card flex flex-row p-4 border border-border rounded-lg hover:border-foreground/20  transition-colors cursor-ponter text-foreground">
+              return <div 
+                key={tx.idx} 
+                className="bg-card flex flex-row p-4 border border-border rounded-lg hover:border-foreground/20 transition-colors cursor-pointer text-foreground"
+                onClick={() => handleTransactionClick(tx)}
+              >
 
                 <div className={twMerge("h-10 w-10 text-white rounded-full flex items-center justify-center text-lg uppercase", colorsKind[tx.kind] ?? 'bg-gray-500')}>
                   <Icon></Icon>
@@ -158,18 +185,40 @@ export const AssetPage = () => {
                     </div>
                   </div>
                   <div className='text-right'>
-                    <span className={twMerge("text-sm font-semibold ", statusColors[tx.status])}>{tx.status}</span>
+                    <div className="flex items-center justify-end gap-2">
+                      <span className={twMerge("text-sm font-semibold ", statusColors[tx.status])}>{tx.status}</span>
+                      {tx.status === 'WaitingCounterparty' && (
+                        <Icons.refresh className="h-3 w-3 text-orange-500" />
+                      )}
+                    </div>
                     <div className="text-xs mt-1 font-mono truncate text-gray-dark">
                       tx: {tx.txid ? formatAddress(tx.txid) : '—'}
                     </div>
                   </div>
 
                 </div>
-              </Link>
+              </div>
             })}
           </div>
         )}
       </div>
+
+      {/* Transaction Details Drawer */}
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Transaction Details</DrawerTitle>
+          </DrawerHeader>
+          {selectedTransaction && asset && (
+            <TransactionDetails
+              transaction={selectedTransaction}
+              asset={asset}
+              onClose={handleCloseDrawer}
+              onTransactionUpdate={fetchTransfers}
+            />
+          )}
+        </DrawerContent>
+      </Drawer>
 
     </div>
   );

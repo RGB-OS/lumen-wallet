@@ -1,11 +1,12 @@
 import api from './api';
-import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListTransfersResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
+import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
     asset_id: string | undefined;
     amount: number | undefined;
     duration_seconds: number;
     min_confirmations: number;
+    witness: boolean;
 };
 type RgbInvoiceResponse = {
     invoice: string;
@@ -21,6 +22,10 @@ class NodeService {
 
     async nodeinfo() {
         return api.get<NodeInfoResponse>('/nodeinfo');
+    }
+
+    async networkinfo() {
+        return api.get<NetworkInfoResponse>('/networkinfo');
     }
 
     async btcbalance() {
@@ -73,6 +78,16 @@ class NodeService {
         return res.data;
     }
 
+    async failtransfer(params: { batch_transfer_idx: number }) {
+        const { batch_transfer_idx = null } = params;
+        if (batch_transfer_idx === null) {
+            throw new Error('Missing required parameters for failtransfer');
+        }
+        const res = await api.post('/failtransfers', { batch_transfer_idx, no_asset_only: false, skip_sync: false });
+        return res.data;
+
+    }
+
     async sendasset<TXIdResponse>(params: SendRGBAsset) {
         const {
             asset_id,
@@ -121,6 +136,12 @@ class NodeService {
             fee_rate,
             skip_sync
         });
+        return res.data;
+    }
+
+    async listunspents(params?: { skip_sync?: boolean }) {
+        const { skip_sync = false } = params ?? {};
+        const res = await api.post('/listunspents', { skip_sync });
         return res.data;
     }
 }

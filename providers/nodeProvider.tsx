@@ -192,7 +192,7 @@ const nodeApiCall: ApiCall[] = [
     { method: 'POST', path: 'address' },
     // { method: 'GET', path: 'listchannels' },
     // { method: 'GET', path: 'listpeers' },
-    { method: 'POST', path: 'btcbalance', body: { skip_sync: false } },
+    { method: 'POST', path: 'btcbalance', body: { skip_sync: true } },
     // { method: 'POST', path: 'listtransactions', body: { skip_sync: false } },
     {
         method: 'POST', path: 'listassets', body: {

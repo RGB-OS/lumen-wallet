@@ -179,3 +179,27 @@ export interface CreateUTXOsRequest {
 export interface CreateUTXOsResponse {
 
 }
+
+export interface RGBAllocation {
+  asset_id: string;
+  assignment: {
+    type: string;
+    value: number;
+  };
+  settled: boolean;
+}
+
+export interface UTXO {
+  outpoint: string;
+  btc_amount: number;
+  colorable: boolean;
+}
+
+export interface Unspent {
+  utxo: UTXO;
+  rgb_allocations: RGBAllocation[];
+}
+
+export interface ListUnspentsResponse {
+  unspents: Unspent[];
+}

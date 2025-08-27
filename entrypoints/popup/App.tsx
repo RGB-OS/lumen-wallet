@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import reactLogo from '@/assets/react.svg';
 import wxtLogo from '/wxt.svg';
 import './App.css';
@@ -10,7 +10,9 @@ import { WalletLayout } from '@/components/wallet/WalletLayout';
 import { AssetPage } from '@/components/asset/AssetPage';
 import SendAssetPage from '@/components/asset/SendPage';
 import ReceiveAssetPage from '@/components/asset/ReciveAssetPage';
+import { UTXOsPageRefactored as UTXOsPage } from '@/components/wallet/UTXOsPageRefactored';
 import Approval from '@/components/approval';
+import { QueryProvider } from '@/providers/queryProvider';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -24,7 +26,7 @@ function App() {
   }, []);
 
   return (
-    <>
+    <QueryProvider>
       <HashRouter>
         <Routes>
           
@@ -39,31 +41,12 @@ function App() {
            
             <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
             <Route path="receive" element={<ReceiveAssetPage />} />
+            <Route path="utxos" element={<UTXOsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+                </Routes>
       </HashRouter>
-      {/* <div>
-        <a href="https://wxt.dev" target="_blank">
-          <img src={wxtLogo} className="logo" alt="WXT logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>WXT + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the WXT and React logos to learn more
-      </p> */}
-    </>
+    </QueryProvider>
   );
 }
 

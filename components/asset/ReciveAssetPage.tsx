@@ -18,18 +18,21 @@ import { nodeService } from '@/services/nodeService';
 import axios from 'axios';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { set } from 'zod';
+import { RgbInvoiceResponse } from 'rgb-webln-sdk';
+import { get } from 'http';
 
 interface ReceiveAssetForm {
   asset_id?: string;
   amount?: number;
   expiration: string;
   blind: boolean;
+  witness: boolean;
 }
 
 export default function ReceiveAssetPage() {
   const [blind, setBlind] = useState(false);
-  const [invoice, setInvoice] = useState<string | null>('rgb:5ALF~YtO-LrLUGxh-jaDm7ME-aNvvOL~-mNT48qM-NQ3Y4gM/RWhwUfTMpuP2Zfx1~j4nswCANGeJrYOqDcKelaMV4zU/~/bcrt:utxob:iKon~sZV-0LPPDWD-mmgLMnN-9_10l4D-LTPXdsK-zx~6Zli-7cHCr?assignment_name=assetOwner&expiry=1755549817&endpoints=rpcs://proxy.iriswallet.com/0.2/json-rpc');
-  const assetsData = useRLNState<ListAssetsResponse>('listassets');
+  const [invoice, setInvoice] = useState<string | null>(null);
+  const assetsData = useRLNState<ListAssetsResponse>('listassets'); 
   const { asset_id } = useParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const assetOptions = useMemo(() => {
@@ -52,10 +55,13 @@ export default function ReceiveAssetPage() {
     register,
     handleSubmit,
     setValue,
+    getValues,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<ReceiveAssetForm>({
-    defaultValues: { expiration: '3600', blind: false },
+    defaultValues: { expiration: '3600', blind: false ,witness: false},
   });
+  const witness = watch("witness");
   const navigate = useNavigate();
   const onSubmit = async (data: ReceiveAssetForm) => {
     console.log('Submitting receive asset form:', data);
@@ -63,13 +69,14 @@ export default function ReceiveAssetPage() {
     try {
       const body: any = {
         duration_seconds: parseInt(data.expiration, 10),
+        witness: data.witness,
       };
       if (!data.blind) {
         body.asset_id = asset?.asset_id;
         body.amount = data.amount;
       }
 
-      const res = await nodeService.rgbinvoice(body);
+      const res = await nodeService.rgbinvoice(body) as RgbInvoiceResponse;
       setInvoice(res.invoice);
     } catch (error) {
 
@@ -133,11 +140,19 @@ export default function ReceiveAssetPage() {
                 id="blind" checked={blind}
                 onCheckedChange={(v) => {
                   if (!asset_id) return; // Prevent toggling when disabled
-                  setBlind(v);
                   setValue('blind', v);
                 }}
               />
-              <Label htmlFor="blind">Blind receive</Label>
+              <Label htmlFor="blind">Blind</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="witness" checked={witness}
+                onCheckedChange={(v) => {
+                  setValue('witness', v);
+                }}
+              />
+              <Label htmlFor="blind">Witness</Label>
             </div>
 
             {!blind && (
