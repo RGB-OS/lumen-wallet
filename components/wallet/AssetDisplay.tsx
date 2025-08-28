@@ -1,12 +1,12 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
 import { satoshisToBTC } from "@/utils";
-import { Asset, BTCBalance, ListAssetsResponse } from "@/types/rgb-types";
-import { useRLNState } from "@/providers/nodeProvider";
+import { Asset } from "@/types/rgb-types";
 import { Link } from "react-router-dom";
+import { useBTCBalance, useListAssets } from "@/hooks/useWalletQueries";
 
 
 
@@ -32,17 +32,27 @@ const upsertAssets = (prev: Asset[], incoming: Asset[]): Asset[] => {
 
 export const AssetDisplay = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(false);
   const [totalValue, setTotalValue] = useState("0.00");
   const [btcPrice] = useState(50200); // Mock BTC price for calculation
-  const btcBalanceData = useRLNState<BTCBalance>('btcbalance');
-  const assetsData = useRLNState<ListAssetsResponse>('listassets');
+  
+  // React Query hooks
+  const { 
+    data: btcBalanceData, 
+    isLoading: btcLoading, 
+    error: btcError 
+  } = useBTCBalance();
+  
+  const { 
+    data: assetsData, 
+    isLoading: assetsLoading, 
+    error: assetsError 
+  } = useListAssets();
 
 
   useEffect(() => {
-    if (btcBalanceData.status !== 'success' || !btcBalanceData.data) return;
+    if (!btcBalanceData) return;
 
-    const { spendable } = btcBalanceData.data.vanilla;
+    const { spendable } = btcBalanceData.vanilla;
     const btcAmount = satoshisToBTC(spendable);
     const btcValueUSD = parseFloat(btcAmount) * btcPrice;
 
@@ -57,13 +67,12 @@ export const AssetDisplay = () => {
     };
 
     setAssets(prev => upsertAsset(prev, newBTCAsset));
-  }, [btcBalanceData.data, btcBalanceData.status]);
+  }, [btcBalanceData, btcPrice]);
 
   useEffect(() => {
-    if (assetsData.status !== 'success' || !assetsData.data) return;
+    if (!assetsData) return;
 
     const rgbAssets: Asset[] = [];
-
 
     const processAssets = (list?: Array<any>, defaultIcon = '🎨') => {
       if (!list) return;
@@ -82,20 +91,20 @@ export const AssetDisplay = () => {
       }
     };
   
-    processAssets(assetsData.data.nia, '🎨');
-    processAssets(assetsData.data.uda, '🧩');
-    processAssets(assetsData.data.cfa, '🖼️');
+    processAssets(assetsData.nia, '🎨');
+    processAssets(assetsData.uda, '🧩');
+    processAssets(assetsData.cfa, '🖼️');
   
     setAssets(prev => upsertAssets(prev, rgbAssets));
 
-  },[ assetsData.data, assetsData.status]);
+  },[ assetsData]);
 
   
   return (
     <div className="space-y-6 py-1">
       {/* Asset List */}
 
-      {loading ? (
+      {btcLoading || assetsLoading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
             <div key={i} className="flex items-center space-x-4 border border-border rounded-lg animate-pulse">

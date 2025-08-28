@@ -1,4 +1,34 @@
+import { Icons } from '../icons';
+import { useSync } from '@/hooks/useSync';
+import { useLogout } from '@/hooks/useLogout';
+import { useToast } from '@/hooks/useToast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 export const Header: React.FC = () => {
+    const { sync, isSyncing } = useSync();
+    const { logout } = useLogout();
+    const { success, error } = useToast();
+
+    const handleRefresh = async () => {
+        try {
+            await sync();
+            success('Sync completed successfully');
+        } catch (err) {
+            console.error('Failed to sync:', err);
+            error('Failed to sync. Please try again.');
+        }
+    };
+
+    const handleLogout = () => {
+        logout();
+        success('Logged out successfully');
+    };
+
     return <header className="bg-card border-b border-border">
         <div className=" px-4 py-2 flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -9,8 +39,23 @@ export const Header: React.FC = () => {
                 <div className="text-lg font-bold">Lumen</div>
             </div>
             <div className="flex items-center space-x-4">
-                <Icons.refresh className="h-5 w-5 text-muted-foreground cursor-pointer opacity-60" />
-                <Icons.menu className="h-5 w-5 text-muted-foreground cursor-pointer opacity-60" />
+                <Icons.refresh 
+                    className={`h-5 w-5 text-muted-foreground cursor-pointer transition-opacity ${
+                        isSyncing ? 'opacity-40 animate-spin' : 'opacity-60 hover:opacity-100'
+                    }`}
+                    onClick={handleRefresh}
+                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Icons.menu className="h-5 w-5 text-muted-foreground cursor-pointer opacity-60 hover:opacity-100" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                            <Icons.logOut className="mr-2 h-4 w-4" />
+                            <span>Logout</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     </header>

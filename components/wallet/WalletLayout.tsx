@@ -2,6 +2,7 @@ import { RLNApiProvider } from "@/providers/nodeProvider";
 import { PropsWithChildren } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
+import { Icons } from "../icons";
 
 const TITLE_MAP: { pattern: RegExp; title: string }[] = [
   { pattern: /^\/wallet$/, title: 'Wallet Overview' },

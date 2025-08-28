@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { useState, useMemo } from 'react';
-import { useRLNState } from '@/providers/nodeProvider';
-import { InvoiceDecoded, ListAssetsResponse } from '@/types/rgb-types';
+import { useState, useMemo, useEffect } from 'react';
+import { InvoiceDecoded } from '@/types/rgb-types';
 import { nodeService } from '@/services/nodeService';
+import { useListAssets } from '@/hooks/useWalletQueries';
 import z from 'zod';
 
 const schema = z.object({
@@ -38,7 +38,14 @@ export default function SendAssetPage() {
   });
   const { asset_id } = useParams();
   const navigate = useNavigate();
-  const assetsData = useRLNState<ListAssetsResponse>('listassets');
+  
+  // React Query hook
+  const { 
+    data: assetsData, 
+    isLoading: assetsLoading, 
+    error: assetsError 
+  } = useListAssets();
+  
   const [donation, setDonation] = useState(false);
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null);
   const [decodedInvoice, setDecodedInvoice] = useState<InvoiceDecoded | null>(null);
@@ -47,10 +54,10 @@ export default function SendAssetPage() {
   const invoiceVal = watch('invoice');
 
   const asset = useMemo(() => {
-    if (assetsData.status !== 'success' || !assetsData.data || !asset_id) return null;
-    const all = [...(assetsData.data.nia ?? []), ...(assetsData.data.uda ?? []), ...(assetsData.data.cfa ?? [])];
+    if (!assetsData || !asset_id) return null;
+    const all = [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
     return all.find((a) => a.asset_id === asset_id);
-  }, [assetsData.data, asset_id]);
+  }, [assetsData, asset_id]);
 
   useEffect(() => {
     const decode = async () => {

@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw } from 'lucide-react';
-import { ListAssetsResponse, RgbTransfer } from '@/types/rgb-types';
-import { useRLNApi, useRLNState } from '@/providers/nodeProvider';
-import { nodeService } from '@/services/nodeService';
+import { RgbTransfer } from '@/types/rgb-types';
 import { twMerge } from 'tailwind-merge';
 import { 
   Drawer, 
@@ -18,6 +16,11 @@ import { TransactionDetails } from './TransactionDetails';
 import { formatAddress } from '@/utils';
 import { Icons } from '@/components/icons';
 import { useDrawer } from '@/hooks/useDrawer';
+import { 
+  useListAssets, 
+  useListTransfers, 
+  useRefreshTransfers 
+} from '@/hooks/useWalletQueries';
 
 const TransferKind: any = {
   Issuance: Icons.plus,
@@ -42,37 +45,37 @@ const statusColors: any = {
 
 export const AssetPage = () => {
   const { asset_id } = useParams();
-  const key = `listtransfers:${JSON.stringify({ asset_id: asset_id })}`;
-  const { fetchApi } = useRLNApi();
   const [selectedTransaction, setSelectedTransaction] = useState<RgbTransfer | null>(null);
   const { open, setOpen } = useDrawer();
 
-  const assetsData = useRLNState<ListAssetsResponse>('listassets');
-  const {
-    data: transfersData,
-    status: txStatus,
-    error: txError,
-    refetch,
-  } = useRLNState<{ transfers: RgbTransfer[] }>(key);
-  console.log('AssetPage transfersData', transfersData, 'txStatus', txStatus, 'txError', txError);
+  // React Query hooks
+  const { 
+    data: assetsData, 
+    isLoading: assetsLoading, 
+    error: assetsError 
+  } = useListAssets();
+  
+  const { 
+    data: transfersData, 
+    isLoading: transfersLoading, 
+    error: transfersError, 
+    refetch: refetchTransfers 
+  } = useListTransfers(asset_id || '');
+  
+  const refreshTransfersMutation = useRefreshTransfers();
+  
+  console.log('AssetPage transfersData', transfersData, 'transfersLoading', transfersLoading, 'transfersError', transfersError);
   const transfers = transfersData?.transfers ?? [];
 
   const asset = useMemo(() => {
-    if (assetsData.status !== 'success' || !assetsData.data || !asset_id) return null;
+    if (!assetsData || !asset_id) return null;
     const all = [
-      ...(assetsData.data.nia ?? []),
-      ...(assetsData.data.uda ?? []),
-      ...(assetsData.data.cfa ?? []),
+      ...(assetsData.nia ?? []),
+      ...(assetsData.uda ?? []),
+      ...(assetsData.cfa ?? []),
     ];
     return all.find((a) => a.asset_id === asset_id);
-  }, [assetsData.data, asset_id]);
-
-  const fetchTransfers = async () => {
-    console.log('Fetching transfers for asset_id:', asset_id);
-    await nodeService.refreshtransfers();
-    if (!asset_id) return;
-    await fetchApi<{ transfers: RgbTransfer[] }>('listtransfers', 'POST', { asset_id });
-  }
+  }, [assetsData, asset_id]);
 
   const handleTransactionClick = (transaction: RgbTransfer) => {
     setSelectedTransaction(transaction);
@@ -84,13 +87,17 @@ export const AssetPage = () => {
     setSelectedTransaction(null);
   };
 
-  useEffect(() => {
-    if (!asset_id) return;
-    fetchTransfers()
-  }, [asset_id]);
+  const handleRefreshTransfers = async () => {
+    console.log('Refreshing transfers for asset_id:', asset_id);
+    await refreshTransfersMutation.mutateAsync({ skip_sync: false });
+  };
 
-  if (assetsData.status === 'loading') {
+  if (assetsLoading) {
     return <div className="p-6 text-sm">Loading asset data...</div>;
+  }
+
+  if (assetsError) {
+    return <div className="p-6 text-sm text-destructive">Error loading asset data: {assetsError.message}</div>;
   }
 
   if (!asset) {
@@ -138,26 +145,26 @@ export const AssetPage = () => {
         <div className="flex justify-between items-center">
           <div className="text-lg font-semibold">Transfers</div>
           <RefreshCw
-            onClick={() => fetchTransfers()}
-            className={`h-4 w-4 cursor-pointer ${txStatus === 'loading' ? 'animate-spin' : ''}`}
+            onClick={() => handleRefreshTransfers()}
+            className={`h-4 w-4 cursor-pointer ${refreshTransfersMutation.isPending ? 'animate-spin' : ''}`}
           />
         </div>
 
-        {txStatus === 'loading' && (
+        {transfersLoading && (
           <p className="text-sm text-muted-foreground">Loading transfers...</p>
         )}
-        {txStatus === 'error' && (
+        {transfersError && (
           <div className="text-sm text-red-500">
-            <p>{txError}</p>
-            <Button variant="outline" size="sm" onClick={fetchTransfers} className="mt-2">
+            <p>{transfersError.message}</p>
+            <Button variant="outline" size="sm" onClick={() => refetchTransfers()} className="mt-2">
               Retry
             </Button>
           </div>
         )}
-        {txStatus === 'success' && transfers.length === 0 && (
+        {!transfersLoading && !transfersError && transfers.length === 0 && (
           <p className="text-sm text-muted-foreground">No transfers found.</p>
         )}
-        {txStatus === 'success' && transfers.length > 0 && (
+        {!transfersLoading && !transfersError && transfers.length > 0 && (
           <div className="space-y-3">
             {transfers.map((tx) => {
               const Icon = TransferKind[tx.kind] ? TransferKind[tx.kind] : null;
@@ -214,7 +221,7 @@ export const AssetPage = () => {
               transaction={selectedTransaction}
               asset={asset}
               onClose={handleCloseDrawer}
-              onTransactionUpdate={fetchTransfers}
+              onTransactionUpdate={handleRefreshTransfers}
             />
           )}
         </DrawerContent>

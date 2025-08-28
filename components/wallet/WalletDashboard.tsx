@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,14 +8,16 @@ import { RefreshCw, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
 import { Wallet, Send, FileText, Settings, Copy, Eye } from "lucide-react";
 import { AssetDisplay } from "./AssetDisplay";
 import { TransactionForm } from "./TransactionForm";
-import { useToast } from "@/hooks/useToast";
+import { useToastActions } from "@/hooks/useToastActions";
 
 import { formatAddress, satoshisToBTC } from "@/utils";
-import { useRLNApi, useRLNState } from "@/providers/nodeProvider";
-import { AddressResponse, BTCBalance, NetworkInfoResponse, NodeInfoResponse } from "@/types/rgb-types";
 import { BTCBalanceCard } from "./BTCBalanceCard";
 import { Link } from "react-router-dom";
 import { Header } from "./Header";
+import { 
+  useAddress, 
+  useNetworkInfo 
+} from "@/hooks/useWalletQueries";
 // import { useToast } from "@/hooks/use-toast";
 
 // interface WalletDashboardProps {
@@ -26,26 +28,29 @@ import { Header } from "./Header";
 export const WalletDashboard = () => {
     const [publicKey, setPublicKey] = useState<string>("");
     const [showPrivateInfo, setShowPrivateInfo] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [totalValue, setTotalValue] = useState("0.00");
 
-    const { toast } = useToast();
-    const addressData = useRLNState<AddressResponse>('address');
-    const networkData = useRLNState<NetworkInfoResponse>('networkinfo');
+    const { showCopiedToClipboard, showError } = useToastActions();
+    
+    // React Query hooks
+    const { 
+      data: addressData, 
+      isLoading: addressLoading, 
+      error: addressError 
+    } = useAddress();
+    
+    const { 
+      data: networkData, 
+      isLoading: networkLoading, 
+      error: networkError 
+    } = useNetworkInfo();
 
     const copyToClipboard = async (text: string, label: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            toast({
-                title: "Copied!",
-                description: `${label} copied to clipboard`,
-            });
+            showCopiedToClipboard(label);
         } catch (err) {
-            toast({
-                title: "Error",
-                description: "Failed to copy to clipboard",
-                variant: "destructive",
-            });
+            showError("Copy Failed", "Failed to copy to clipboard");
         }
     };
 
@@ -62,16 +67,24 @@ export const WalletDashboard = () => {
               <Bitcoin className="h-6 w-6 text-bitcoin-foreground" />
             </div> */}
                         <div className="text-center">
-                            {networkData.data ? <p className="text-sm text-muted-foreground opacity-60">{networkData.data?.network}</p> : <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>}
+                            {networkData ? (
+                              <p className="text-sm text-muted-foreground opacity-60">{networkData.network}</p>
+                            ) : networkLoading ? (
+                              <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>
+                            ) : networkError ? (
+                              <p className="text-xs text-red-500">Network info unavailable</p>
+                            ) : null}
                             <BTCBalanceCard />
-                            {/* <p className="text-xl font-bold text-bitcoin flex items-center space-x-2"><span>{totalValue} BTC </span><RefreshCw onClick={getBtcBalance} className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /></p> */}
-                            {addressData.data ?
-                                <p className="text-sm text-muted-foreground opacity-70 flex items-center justify-center space-x-2"><span>{formatAddress(addressData.data.address)}</span>
-                                    {/* <Button size="icon" variant="outline" > */}
-                                    <Copy className="w-4 h-4" onClick={() => copyToClipboard(addressData.data?.address as string, "Address")} />
-                                    {/* </Button> */}
-                                </p>
-                                : <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>}
+                            {addressData ? (
+                              <p className="text-sm text-muted-foreground opacity-70 flex items-center justify-center space-x-2">
+                                <span>{formatAddress(addressData.address)}</span>
+                                <Copy className="w-4 h-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => copyToClipboard(addressData.address, "Address")} />
+                              </p>
+                            ) : addressLoading ? (
+                              <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>
+                            ) : addressError ? (
+                              <p className="text-xs text-red-500">Address unavailable</p>
+                            ) : null}
                         </div>
                     </div>
                 </CardContent>

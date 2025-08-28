@@ -13,6 +13,9 @@ import ReceiveAssetPage from '@/components/asset/ReciveAssetPage';
 import { UTXOsPageRefactored as UTXOsPage } from '@/components/wallet/UTXOsPageRefactored';
 import Approval from '@/components/approval';
 import { QueryProvider } from '@/providers/queryProvider';
+import { ConfirmProvider } from '@/providers/confirmProvider';
+import { ToastProvider } from '@/providers/toastProvider';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -26,27 +29,33 @@ function App() {
   }, []);
 
   return (
-    <QueryProvider>
-      <HashRouter>
-        <Routes>
-          
-          <Route path="/login" element={<ConnectNode />} />
-          <Route path="/approval" element={<Approval />} />
-          <Route path="/" element={<ConnectNode />} />
-          <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
-            <Route index element={<WalletDashboard />} />
-            <Route path="send" element={<SendAssetPage />} />
-            <Route path="send/:asset_id" element={<SendAssetPage />} />
-            <Route path="asset/:asset_id" element={<AssetPage />} />
-           
-            <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
-            <Route path="receive" element={<ReceiveAssetPage />} />
-            <Route path="utxos" element={<UTXOsPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-      </HashRouter>
-    </QueryProvider>
+    <ErrorBoundary>
+      <QueryProvider>
+        <ConfirmProvider>
+          <ToastProvider>
+            <HashRouter>
+              <Routes>
+                
+                <Route path="/login" element={<ConnectNode />} />
+                <Route path="/approval" element={<Approval />} />
+                <Route path="/" element={<ConnectNode />} />
+                <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
+                  <Route index element={<WalletDashboard />} />
+                  <Route path="send" element={<SendAssetPage />} />
+                  <Route path="send/:asset_id" element={<SendAssetPage />} />
+                  <Route path="asset/:asset_id" element={<AssetPage />} />
+                 
+                  <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
+                  <Route path="receive" element={<ReceiveAssetPage />} />
+                  <Route path="utxos" element={<UTXOsPage />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" />} />
+                      </Routes>
+            </HashRouter>
+          </ToastProvider>
+        </ConfirmProvider>
+      </QueryProvider>
+    </ErrorBoundary>
   );
 }
 

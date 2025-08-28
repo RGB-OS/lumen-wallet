@@ -7,33 +7,33 @@ import { RefreshCw, Plus } from 'lucide-react';
 import { Unspent } from '@/types/rgb-types';
 import { useToast } from '@/hooks/useToast';
 import { formatAddress } from '@/utils';
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle 
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle
 } from '@/components/ui/drawer';
 import { CreateUTXOForm } from './CreateUTXOForm';
-import { 
-  useListUnspents, 
-  useCreateUTXOs, 
-  useWalletRefetch 
+import {
+  useListUnspents,
+  useCreateUTXOs,
+  useWalletRefetch
 } from '@/hooks/useWalletQueries';
 
 export const UTXOsPageRefactored = () => {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('occupied');
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const { toast } = useToast();
 
   // React Query hooks
-  const { 
-    data: unspentsData, 
-    isLoading, 
-    error, 
+  const {
+    data: unspentsData,
+    isLoading,
+    error,
     refetch,
-    isFetching 
+    isFetching
   } = useListUnspents();
-  
+
   const createUTXOsMutation = useCreateUTXOs();
   const { refetchUnspents } = useWalletRefetch();
 
@@ -47,7 +47,7 @@ export const UTXOsPageRefactored = () => {
       case 'unoccupied':
         return unspents.filter((unspent: Unspent) => unspent.rgb_allocations.length === 0);
       case 'unlockable':
-        return unspents.filter((unspent: Unspent) => 
+        return unspents.filter((unspent: Unspent) =>
           unspent.rgb_allocations.some((allocation: any) => !allocation.settled)
         );
       default:
@@ -68,7 +68,7 @@ export const UTXOsPageRefactored = () => {
       case 'unoccupied':
         return unspents.filter((unspent: Unspent) => unspent.rgb_allocations.length === 0).length;
       case 'unlockable':
-        return unspents.filter((unspent: Unspent) => 
+        return unspents.filter((unspent: Unspent) =>
           unspent.rgb_allocations.some((allocation: any) => !allocation.settled)
         ).length;
       default:
@@ -109,10 +109,10 @@ export const UTXOsPageRefactored = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">UTXOs</h1>
           <p className="text-sm text-muted-foreground">
-            Manage your unspent transaction outputs
-            {isFetching && !isLoading && (
+            {/* Manage your unspent transaction outputs */}
+            {/* {isFetching && !isLoading && (
               <span className="ml-2 text-xs text-blue-500">(updating...)</span>
-            )}
+            )} */}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -136,10 +136,10 @@ export const UTXOsPageRefactored = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">
+        <TabsList className="grid w-full grid-cols-3">
+          {/* <TabsTrigger value="all">
             All ({getTabCount('all')})
-          </TabsTrigger>
+          </TabsTrigger> */}
           <TabsTrigger value="occupied">
             Occupied ({getTabCount('occupied')})
           </TabsTrigger>
@@ -151,9 +151,9 @@ export const UTXOsPageRefactored = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
+        {/* <TabsContent value="all" className="space-y-4">
           <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="occupied" className="space-y-4">
           <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
@@ -198,23 +198,24 @@ const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
   return (
     <div className="space-y-3">
       {unspents.map((unspent, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
+        <Card key={index} className="hover:shadow-md transition-shadow rounded-lg p-0" >
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="font-mono text-sm text-foreground">
-                    {formatAddress(unspent.utxo.outpoint)}
-                  </h3>
-                  <Badge variant={unspent.utxo.colorable ? "default" : "secondary"}>
-                    {unspent.utxo.colorable ? "Colorable" : "Non-colorable"}
-                  </Badge>
-                </div>
-                
-                <div className="text-sm text-muted-foreground mb-2">
-                  BTC Amount: {formatBTCAmount(unspent.utxo.btc_amount)} BTC
-                </div>
+                <div className='text-left'>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h3 className="font-mono text-sm text-foreground">
+                      {formatAddress(unspent.utxo.outpoint)}
+                    </h3>
+                    <Badge variant={unspent.utxo.colorable ? "default" : "secondary"}>
+                      {unspent.utxo.colorable ? "Colorable" : "Non-colorable"}
+                    </Badge>
+                  </div>
 
+                  <div className="text-xs text-gray-dark mb-2">
+                    BTC Amount: {formatBTCAmount(unspent.utxo.btc_amount)} BTC
+                  </div>
+                </div>
                 {unspent.rgb_allocations.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -222,7 +223,7 @@ const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
                     </p>
                     {unspent.rgb_allocations.map((allocation, allocIndex) => (
                       <div key={allocIndex} className="text-xs bg-muted p-2 rounded">
-                        <div className="flex justify-between items-center">
+                        <div className="flex space-x-2 items-center">
                           <span className="font-mono">
                             {formatAddress(allocation.asset_id)}
                           </span>
@@ -230,8 +231,8 @@ const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
                             {allocation.settled ? "Settled" : "Unsettled"}
                           </Badge>
                         </div>
-                        <div className="text-muted-foreground mt-1">
-                          Type: {allocation.assignment.type} | 
+                        <div className="text-left text-xs text-gray-dark mt-1">
+                          Type: {allocation.assignment.type} |
                           Value: {allocation.assignment.value}
                         </div>
                       </div>

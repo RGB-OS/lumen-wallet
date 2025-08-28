@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { useToast } from '@/hooks/useToast';
+import { useToastActions } from '@/hooks/useToastActions';
 import { useFailTransfer } from '@/hooks/useWalletQueries';
+import { useConfirmActions } from '@/hooks/useConfirmActions';
 
 const TransferKind: any = {
   Issuance: Icons.plus,
@@ -42,7 +43,8 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   onClose,
   onTransactionUpdate,
 }) => {
-  const { toast } = useToast();
+  const { showTransferSuccess, showTransferError } = useToastActions();
+  const { confirmCancel } = useConfirmActions();
   const failTransferMutation = useFailTransfer();
   const Icon = TransferKind[transaction.kind] ? TransferKind[transaction.kind] : null;
   const formattedValue = transaction.requested_assignment?.value ? (
@@ -59,7 +61,9 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   };
 
   const handleCancelTransfer = async () => {
-    if (!confirm('Are you sure you want to cancel this transfer? This action cannot be undone.')) {
+    const confirmed = await confirmCancel('transfer');
+
+    if (!confirmed) {
       return;
     }
 
@@ -67,29 +71,22 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
       { batch_transfer_idx: transaction.idx },
       {
         onSuccess: () => {
-          toast({
-            title: "Transfer Cancelled",
-            description: "The transfer has been successfully cancelled.",
-          });
+          showTransferSuccess('Transfer Cancelled');
           onTransactionUpdate?.();
           onClose?.();
         },
         onError: (error) => {
           console.error('Failed to cancel transfer:', error);
-          toast({
-            title: "Error",
-            description: "Failed to cancel transfer. Please try again.",
-            variant: "destructive",
-          });
+          showTransferError('Transfer Cancellation');
         }
       }
     );
   };
 
-  return (
-    <div className="flex flex-col h-full">
+    return (
+    <>
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="overflow-y-auto max-h-[60vh] px-6 pb-6 space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
           <div className={twMerge("h-12 w-12 text-white rounded-full flex items-center justify-center text-xl uppercase", colorsKind[transaction.kind] ?? 'bg-gray-500')}>
@@ -99,118 +96,118 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
             <h3 className="text-lg font-semibold text-foreground">
               {transaction.kind} {formattedValue} {asset.ticker ?? '—'}
             </h3>
-            <Badge className={twMerge("mt-1", statusColors[transaction.status])}>
+            <Badge variant="secondary" className={twMerge("mt-1 font-semibold", statusColors[transaction.status])}>
               {transaction.status}
             </Badge>
           </div>
         </div>
 
         {/* Transaction Details */}
-        <Card>
+        <Card className='rounded-lg shadow-md'>
           <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Transaction ID</label>
-              <p className="text-sm font-mono break-all mt-1">
-                {transaction.txid ? formatAddress(transaction.txid) : '—'}
-              </p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Index</label>
-              <p className="text-sm mt-1">{transaction.idx}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Created</label>
-              <p className="text-sm mt-1">{formatDate(transaction.created_at)}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Updated</label>
-              <p className="text-sm mt-1">{formatDate(transaction.updated_at)}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Expiration</label>
-              <p className="text-sm mt-1">{formatDate(transaction.expiration)}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Recipient ID</label>
-              <p className="text-sm font-mono break-all mt-1">
-                {transaction.recipient_id ? formatAddress(transaction.recipient_id) : '—'}
-              </p>
-            </div>
-          </div>
-
-          {/* Assignment Details */}
-          <div>
-            <label className="text-xs text-gray-dark uppercase tracking-wide">Requested Assignment</label>
-            <div className="mt-2 p-3 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <span>Type: {transaction.requested_assignment?.type || '—'}</span>
-                <span>Value: {transaction.requested_assignment?.value || '—'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Assignments */}
-          {transaction.assignments && transaction.assignments.length > 0 && (
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Assignments</label>
-              <div className="mt-2 space-y-2">
-                {transaction.assignments.map((assignment, index) => (
-                  <div key={index} className="p-3 bg-muted rounded-lg">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span>Type: {assignment.type}</span>
-                      <span>Value: {assignment.value}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* UTXO Information */}
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Receive UTXO</label>
-              <p className="text-sm font-mono break-all mt-1">
-                {transaction.receive_utxo ? formatAddress(transaction.receive_utxo) : '—'}
-              </p>
-            </div>
-            {transaction.change_utxo && (
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-dark uppercase tracking-wide">Change UTXO</label>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Transaction ID</label>
                 <p className="text-sm font-mono break-all mt-1">
-                  {formatAddress(transaction.change_utxo)}
+                  {transaction.txid ? formatAddress(transaction.txid) : '—'}
                 </p>
               </div>
-            )}
-          </div>
-
-          {/* Transport Endpoints */}
-          {transaction.transport_endpoints && transaction.transport_endpoints.length > 0 && (
-            <div>
-              <label className="text-xs text-gray-dark uppercase tracking-wide">Transport Endpoints</label>
-              <div className="mt-2 space-y-2">
-                {transaction.transport_endpoints.map((endpoint, index) => (
-                  <div key={index} className="p-3 bg-muted rounded-lg">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span>Type: {endpoint.transport_type}</span>
-                      <span>Used: {endpoint.used ? 'Yes' : 'No'}</span>
-                    </div>
-                    <p className="text-xs font-mono break-all mt-1 text-gray-dark">
-                      {endpoint.endpoint}
-                    </p>
-                  </div>
-                ))}
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Index</label>
+                <p className="text-sm mt-1">{transaction.idx}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Created</label>
+                <p className="text-sm mt-1">{formatDate(transaction.created_at)}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Updated</label>
+                <p className="text-sm mt-1">{formatDate(transaction.updated_at)}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Expiration</label>
+                <p className="text-sm mt-1">{formatDate(transaction.expiration)}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Recipient ID</label>
+                <p className="text-sm font-mono break-all mt-1">
+                  {transaction.recipient_id ? formatAddress(transaction.recipient_id) : '—'}
+                </p>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {/* Assignment Details */}
+            <div>
+              <label className="text-xs text-gray-dark uppercase tracking-wide">Requested Assignment</label>
+              <div className="mt-2 p-3 bg-muted rounded-lg">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span>Type: {transaction.requested_assignment?.type || '—'}</span>
+                  <span>Value: {transaction.requested_assignment?.value || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Assignments */}
+            {transaction.assignments && transaction.assignments.length > 0 && (
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Assignments</label>
+                <div className="mt-2 space-y-2">
+                  {transaction.assignments.map((assignment, index) => (
+                    <div key={index} className="p-3 bg-muted rounded-lg">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span>Type: {assignment.type}</span>
+                        <span>Value: {assignment.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* UTXO Information */}
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Receive UTXO</label>
+                <p className="text-sm font-mono break-all mt-1">
+                  {transaction.receive_utxo ? formatAddress(transaction.receive_utxo) : '—'}
+                </p>
+              </div>
+              {transaction.change_utxo && (
+                <div>
+                  <label className="text-xs text-gray-dark uppercase tracking-wide">Change UTXO</label>
+                  <p className="text-sm font-mono break-all mt-1">
+                    {formatAddress(transaction.change_utxo)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Transport Endpoints */}
+            {transaction.transport_endpoints && transaction.transport_endpoints.length > 0 && (
+              <div>
+                <label className="text-xs text-gray-dark uppercase tracking-wide">Transport Endpoints</label>
+                <div className="mt-2 space-y-2">
+                  {transaction.transport_endpoints.map((endpoint, index) => (
+                    <div key={index} className="p-3 bg-muted rounded-lg">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span>Type: {endpoint.transport_type}</span>
+                        <span>Used: {endpoint.used ? 'Yes' : 'No'}</span>
+                      </div>
+                      <p className="text-xs font-mono break-all mt-1 text-gray-dark">
+                        {endpoint.endpoint}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Sticky Cancel Button for WaitingCounterparty status */}
       {transaction.status === 'WaitingCounterparty' && (
-        <div className="border-t border-border bg-background p-6">
+        <div className="border-t border-border bg-background px-6 py-4 mt-6">
           <div className="mb-3">
             <p className="text-sm text-muted-foreground">
               This transfer is waiting for the counterparty. You can cancel it if needed.
@@ -236,6 +233,6 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 };

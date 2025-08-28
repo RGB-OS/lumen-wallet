@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
@@ -21,39 +21,41 @@ type TXIdResponse = {
 class NodeService {
 
     async nodeinfo() {
-        return api.get<NodeInfoResponse>('/nodeinfo');
+        const res = await apiClient.get<NodeInfoResponse>('/nodeinfo');
+        return res.data;
     }
 
     async networkinfo() {
-        return api.get<NetworkInfoResponse>('/networkinfo');
+        const res = await apiClient.get<NetworkInfoResponse>('/networkinfo');
+        return res.data;
     }
 
     async btcbalance() {
-        const res = await api.post<BTCBalance>('/btcbalance', { skip_sync: true });
+        const res = await apiClient.post<BTCBalance>('/btcbalance', { skip_sync: true });
         return res.data;
     }
 
     async listassets() {
-        const res = await api.post('/listassets', {
+        const res = await apiClient.post('/listassets', {
             filter_asset_schemas: ['Nia', 'Uda', 'Cfa'],
         });
         return res.data;
     }
     async listpeers() {
-        const res = await api.post('/listpeers', {});
+        const res = await apiClient.post('/listpeers', {});
         return res.data;
     }
     async listchannels() {
-        const res = await api.post('/listchannels', {});
+        const res = await apiClient.post('/listchannels', {});
         return res.data;
     }
     async getaddress() {
-        const res = await api.post<AddressResponse>('/address');
+        const res = await apiClient.post<AddressResponse>('/address');
         return res.data;
     }
 
     async listtransfers({ assetId }: { assetId: string }) {
-        const res = await api.post<ListTransfersResponse>('/listtransfers', { asset_id: assetId });
+        const res = await apiClient.post<ListTransfersResponse>('/listtransfers', { asset_id: assetId });
         return res.data;
     }
 
@@ -64,7 +66,7 @@ class NodeService {
             duration_seconds = 86400,
             min_confirmations = 1,
         } = params ?? {};
-        const res = await api.post<RgbInvoiceResponse>('/rgbinvoice', {
+        const res = await apiClient.post<RgbInvoiceResponse>('/rgbinvoice', {
             asset_id,
             amount,
             duration_seconds,
@@ -74,7 +76,7 @@ class NodeService {
     }
 
     async decodergbinvoice(params: DecodeInvoiceRequest) {
-        const res = await api.post<InvoiceDecoded>('/decodergbinvoice', params);
+        const res = await apiClient.post<InvoiceDecoded>('/decodergbinvoice', params);
         return res.data;
     }
 
@@ -83,7 +85,7 @@ class NodeService {
         if (batch_transfer_idx === null) {
             throw new Error('Missing required parameters for failtransfer');
         }
-        const res = await api.post('/failtransfers', { batch_transfer_idx, no_asset_only: false, skip_sync: false });
+        const res = await apiClient.post('/failtransfers', { batch_transfer_idx, no_asset_only: false, skip_sync: false });
         return res.data;
 
     }
@@ -102,7 +104,7 @@ class NodeService {
         if (!asset_id || !recipient_id || !assignment || !transport_endpoints) {
             throw new Error('Missing required parameters for sendasset');
         }
-        const res = await api.post<TXIdResponse>('/sendasset', {
+        const res = await apiClient.post<TXIdResponse>('/sendasset', {
             asset_id,
             recipient_id,
             assignment,
@@ -120,16 +122,16 @@ class NodeService {
             skip_sync = false
         } = params ?? {};
 
-        const res = await api.post('/refreshtransfers', { skip_sync });
+        const res = await apiClient.post('/refreshtransfers', { skip_sync });
         return res.data;
     }
 
     async createutxos(params: CreateUTXOsRequest) {
-        const { up_to = false, num, size = 1000, fee_rate = 5, skip_sync = false } = params;
+        const { up_to = false, num, size = 1000, fee_rate = 5, skip_sync = true } = params;
         if (!num) {
             throw new Error('Missing required parameters for createutxos');
         }
-        const res = await api.post('/createutxos', {
+        const res = await apiClient.post('/createutxos', {
             up_to,
             num,
             size,
@@ -140,8 +142,13 @@ class NodeService {
     }
 
     async listunspents(params?: { skip_sync?: boolean }) {
-        const { skip_sync = false } = params ?? {};
-        const res = await api.post('/listunspents', { skip_sync });
+        const { skip_sync = true } = params ?? {};
+        const res = await apiClient.post('/listunspents', { skip_sync });
+        return res.data;
+    }
+
+    async sync() {
+        const res = await apiClient.post('/sync');
         return res.data;
     }
 }

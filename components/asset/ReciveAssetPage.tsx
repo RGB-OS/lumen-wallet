@@ -11,15 +11,12 @@ import { useMemo, useState } from 'react';
 
 import QRCode from 'react-qr-code';
 import { Copy } from 'lucide-react';
-import { ListAssetsResponse } from '@/types/rgb-types';
-import { useRLNApi, useRLNState } from '@/providers/nodeProvider';
 import { useNavigate, useParams } from 'react-router-dom';
 import { nodeService } from '@/services/nodeService';
+import { useListAssets } from '@/hooks/useWalletQueries';
 import axios from 'axios';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { set } from 'zod';
 import { RgbInvoiceResponse } from 'rgb-webln-sdk';
-import { get } from 'http';
 
 interface ReceiveAssetForm {
   asset_id?: string;
@@ -32,13 +29,20 @@ interface ReceiveAssetForm {
 export default function ReceiveAssetPage() {
   const [blind, setBlind] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
-  const assetsData = useRLNState<ListAssetsResponse>('listassets'); 
+  
+  // React Query hook
+  const { 
+    data: assetsData, 
+    isLoading: assetsLoading, 
+    error: assetsError 
+  } = useListAssets();
+  
   const { asset_id } = useParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const assetOptions = useMemo(() => {
-    if (assetsData.status !== 'success' || !assetsData.data) return [];
-    return [...(assetsData.data.nia ?? []), ...(assetsData.data.uda ?? []), ...(assetsData.data.cfa ?? [])];
-  }, [assetsData.data]);
+    if (!assetsData) return [];
+    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
+  }, [assetsData]);
 
   const asset = useMemo(() => {
     if (!asset_id || !assetOptions.length) return null;
@@ -140,6 +144,7 @@ export default function ReceiveAssetPage() {
                 id="blind" checked={blind}
                 onCheckedChange={(v) => {
                   if (!asset_id) return; // Prevent toggling when disabled
+                  setBlind(v);
                   setValue('blind', v);
                 }}
               />

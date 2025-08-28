@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { BTCBalance } from '@/types/rgb-types';
-import { useRLNState } from '@/providers/nodeProvider';
+import { useBTCBalance } from '@/hooks/useWalletQueries';
 
 export const BTCBalanceCard = () => {
-  const { data, status, error, refetch } = useRLNState<BTCBalance>('btcbalance');
+  const { data, isLoading, error, refetch } = useBTCBalance();
   const [totalValue, setTotalValue] = useState('0.00000000');
 
   useEffect(() => {
@@ -13,17 +12,17 @@ export const BTCBalanceCard = () => {
       setTotalValue(btcAmount.toFixed(8));
     }
   }, [data]);
-
-  if (status === 'loading') {
+  
+  if (isLoading) {
     return <div className="h-6 w-32 animate-pulse bg-gray-300 rounded" />;
   }
 
-  if (status === 'error') {
+  if (error) {
     return (
       <div className="text-red-500 flex space-x-2 items-center">
-        <p>Error: {error}</p>
+        <p>Error: {error.message}</p>
         <RefreshCw
-        onClick={refetch}
+        onClick={() => refetch()}
         className={`h-4 w-4 cursor-pointer`}
       />
       </div>
@@ -34,7 +33,7 @@ export const BTCBalanceCard = () => {
     <p className="text-xl font-bold text-bitcoin flex items-center space-x-2">
       <span>{totalValue} BTC</span>
       <RefreshCw
-        onClick={refetch}
+        onClick={() => refetch()}
         className={`h-4 w-4 cursor-pointer`}
       />
     </p>
