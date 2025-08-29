@@ -101,8 +101,8 @@ class WalletService {
         if (!session) throw new WalletPermissionError('User not authenticated');
     
         try {
-            const res = await nodeService.nodeinfo();
-            const { data } = res;
+            const data = await nodeService.nodeinfo();
+     
             return {
                 node: {
                     alias: 'ThunderStack',
@@ -162,6 +162,8 @@ class WalletService {
                     return await nodeService.createutxos(params);
                 case 'refreshtransfers':
                     return await nodeService.refreshtransfers(params);
+                case 'signmessage':
+                    return await nodeService.signmessage(params);
                 default:
                     throw new WalletError(`Unknown request method: ${method}`);
             }

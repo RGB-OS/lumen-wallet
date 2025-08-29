@@ -151,6 +151,15 @@ class NodeService {
         const res = await apiClient.post('/sync');
         return res.data;
     }
+
+    async signmessage(params: { message: string }) {
+        const { message } = params;
+        if (!message) {
+            throw new Error('Message is required for signmessage');
+        }
+        const res = await apiClient.post<{ signed_message: string }>('/signmessage', { message });
+        return res.data;
+    }
 }
 
 export const nodeService = new NodeService();

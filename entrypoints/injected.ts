@@ -49,7 +49,7 @@ export default defineUnlistedScript(() => {
       listTransfers: (params) => callWebLN('request', { method: 'listtransfers', params }),
       listAssets: () => callWebLN('request', { method: 'listassets' }),
       getNetworkInfo: () => callWebLN('request', { method: 'getNetworkInfo' }),
-      signMessage: (message: string) => callWebLN('request', { method: 'signMessage', params: { message } }),
+      signMessage: (message: string) => callWebLN('request', { method: 'signmessage', params: { message } }),
       on: (event: string, callback: (data: any) => void) => {
         console.log(`WebLN event listener for: ${event} not implemented`);
       },
