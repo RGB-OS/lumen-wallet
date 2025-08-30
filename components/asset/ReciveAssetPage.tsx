@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import QRCode from 'react-qr-code';
 import { Copy } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { nodeService } from '@/services/nodeService';
+import { walletService } from '@/services/walletService';
 import { useListAssets } from '@/hooks/useWalletQueries';
 import axios from 'axios';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -27,16 +28,16 @@ interface ReceiveAssetForm {
 }
 
 export default function ReceiveAssetPage() {
-  const [blind, setBlind] = useState(false);
+  const [blind, setBlind] = useState<boolean>(false);
   const [invoice, setInvoice] = useState<string | null>(null);
-  
+
   // React Query hook
-  const { 
-    data: assetsData, 
-    isLoading: assetsLoading, 
-    error: assetsError 
+  const {
+    data: assetsData,
+    isLoading: assetsLoading,
+    error: assetsError
   } = useListAssets();
-  
+
   const { asset_id } = useParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const assetOptions = useMemo(() => {
@@ -49,11 +50,6 @@ export default function ReceiveAssetPage() {
     return assetOptions.find((a) => a.asset_id === asset_id);
   }, [asset_id, assetOptions])
 
-  useEffect(() => {
-    if (!asset) {
-      setBlind(true);
-    }
-  }, [asset]);
   console.log(assetOptions, assetsData)
   const {
     register,
@@ -63,28 +59,73 @@ export default function ReceiveAssetPage() {
     watch,
     formState: { errors, isSubmitting }
   } = useForm<ReceiveAssetForm>({
-    defaultValues: { expiration: '3600', blind: false ,witness: false},
+    defaultValues: {
+      expiration: '3600',
+      blind: false,
+      witness: false,
+      amount: undefined,
+      asset_id: undefined
+    },
   });
+
+  useEffect(() => {
+    if (!asset) {
+      setBlind(true);
+      setValue('blind', true);
+    } else {
+      setBlind(false);
+      setValue('blind', false);
+    }
+  }, [asset, setValue]);
   const witness = watch("witness");
   const navigate = useNavigate();
   const onSubmit = async (data: ReceiveAssetForm) => {
     console.log('Submitting receive asset form:', data);
     setErrorMessage(null);
+
+    // Validate required fields
+    if (!data.expiration) {
+      setErrorMessage('Expiration time is required');
+      return;
+    }
+
+    if (!data.blind && !asset?.asset_id) {
+      setErrorMessage('Asset is required for non-blind invoices');
+      return;
+    }
+
+    if (!data.blind && !data.amount) {
+      setErrorMessage('Amount is required for non-blind invoices');
+      return;
+    }
+
     try {
       const body: any = {
-        duration_seconds: parseInt(data.expiration, 10),
-        witness: data.witness,
+        duration_seconds: parseInt(data.expiration || '3600', 10),
+        witness: Boolean(data.witness),
+        blind: Boolean(data.blind),
       };
-      if (!data.blind) {
-        body.asset_id = asset?.asset_id;
-        body.amount = data.amount;
+      if (!data.blind && asset?.asset_id && data.amount) {
+        body.asset_id = asset.asset_id;
+        body.amount = Number(data.amount);
       }
 
-      const res = await nodeService.rgbinvoice(body) as RgbInvoiceResponse;
-      setInvoice(res.invoice);
-    } catch (error) {
-
-      let message = 'Failed to connect to node';
+      // Show confirmation popup
+      console.log('Opening invoice generation confirmation popup with body:', body);
+      try {
+        const res = await walletService.openInvoiceGenerationConfirmationPopup(body) as RgbInvoiceResponse;
+        console.log('Received response from popup:', res);
+        if (res && res.invoice) {
+          setInvoice(res.invoice);
+        } else {
+          throw new Error('Invalid response from invoice generation popup');
+        }
+      } catch (popupError: any) {
+        console.error('Popup error:', popupError);
+        throw new Error(`Popup error: ${popupError.message || 'Unknown popup error'}`);
+      }
+    } catch (error: any) {
+      let message = error.message || 'Failed to connect to node';
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
         // Check known shape
@@ -108,8 +149,7 @@ export default function ReceiveAssetPage() {
 
   const handleDone = () => {
     setInvoice(null);
-    navigate(`/wallet/asset/${asset_id}`);
-
+    navigate(asset_id ? `/wallet/asset/${asset_id}` : `/wallet`);
   }
 
   if (invoice) {
@@ -125,7 +165,7 @@ export default function ReceiveAssetPage() {
                 <Copy className="w-5 h-5" />
               </Button>
             </div>
-           
+
           </CardContent>
         </Card>
         <Button onClick={handleDone} className='absolute bottom-4 left-4 right-4 font-semibold h-10'>DONE</Button>
@@ -134,42 +174,47 @@ export default function ReceiveAssetPage() {
   }
 
   return (
-      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 w-full h-full space-y-6 px-6 w-full">
-        <Card className='rounded-lg shadow-md'>
-          <CardContent className="px-6 space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex-1 w-full h-full space-y-6 px-6 w-full">
+      <Card className='rounded-lg shadow-md'>
+        <CardContent className="px-6 space-y-6">
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                disabled={!asset_id}
-                id="blind" checked={blind}
-                onCheckedChange={(v) => {
-                  if (!asset_id) return; // Prevent toggling when disabled
-                  setBlind(v);
-                  setValue('blind', v);
-                }}
-              />
-              <Label htmlFor="blind">Blind</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="witness" checked={witness}
-                onCheckedChange={(v) => {
-                  setValue('witness', v);
-                }}
-              />
-              <Label htmlFor="blind">Witness</Label>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              disabled={!asset_id}
+              id="blind"
+              checked={blind || false}
+              onCheckedChange={(v) => {
+                if (!asset_id) return; // Prevent toggling when disabled
+                setBlind(v);
+                setValue('blind', v);
+              }}
+            />
+            <Label htmlFor="blind">Blind</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="witness"
+              checked={witness || false}
+              onCheckedChange={(v) => {
+                setValue('witness', v);
+              }}
+            />
+            <Label htmlFor="witness">Witness</Label>
+          </div>
 
-            {!blind && (
-              <div className="space-y-2">
-                <Label htmlFor="asset_id">Asset</Label>
-                {asset && <div className="relative z-50 text-left">
-
-                  <div className="text-lg font-semibold">{asset.name}</div>
-                  <div className="text-sm text-muted-foreground break-all">{asset.asset_id}</div>
-                </div>}
-                {/* <Select onValueChange={(val) => setValue('asset_id', val)} > */}
-                {/* <Select onValueChange={console.log}>
+          {!blind && (
+            <div className="space-y-2">
+              <Label htmlFor="asset_id">Asset</Label>
+              {asset ? (
+                <div className="relative z-50 text-left">
+                  <div className="text-lg font-semibold">{asset.name || 'Unknown Asset'}</div>
+                  <div className="text-sm text-muted-foreground break-all">{asset.asset_id || 'No Asset ID'}</div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No asset selected</div>
+              )}
+              {/* <Select onValueChange={(val) => setValue('asset_id', val)} > */}
+              {/* <Select onValueChange={console.log}>
                     <SelectTrigger id="asset_id">
                       <SelectValue placeholder="Select asset" />
                     </SelectTrigger>
@@ -182,53 +227,53 @@ export default function ReceiveAssetPage() {
                     </SelectContent>
                   </Select> */}
 
-                {errors.asset_id && <p className="text-sm text-destructive">{errors.asset_id.message}</p>}
-              </div>
-            )}
-
-            {!blind && (
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="any"
-                  placeholder="0.00"
-                  {...register('amount', {
-                    required: !blind,
-                    min: { value: 0.00000001, message: 'Must be > 0' },
-                  })}
-                />
-                {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="expiration">Invoice Expiry</Label>
-              <Tabs
-                defaultValue="3600"
-                onValueChange={(val) => setValue("expiration", val)}
-                className="w-full"
-              >
-                <TabsList className="grid grid-cols-4 w-full">
-                  <TabsTrigger value="3600">1 Hour</TabsTrigger>
-                  <TabsTrigger value="21600">6 Hours</TabsTrigger>
-                  <TabsTrigger value="86400">1 Day</TabsTrigger>
-                  <TabsTrigger value="172800">2 Days</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              {errors.asset_id && <p className="text-sm text-destructive">{errors.asset_id.message}</p>}
             </div>
+          )}
+
+          {!blind && (
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="any"
+                placeholder="0.00"
+                {...register('amount', {
+                  required: !blind,
+                  min: { value: 0.00000001, message: 'Must be > 0' },
+                })}
+              />
+              {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="expiration">Invoice Expiry</Label>
+            <Tabs
+              defaultValue="3600"
+              onValueChange={(val) => setValue("expiration", val)}
+              className="w-full"
+            >
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="3600">1 Hour</TabsTrigger>
+                <TabsTrigger value="21600">6 Hours</TabsTrigger>
+                <TabsTrigger value="86400">1 Day</TabsTrigger>
+                <TabsTrigger value="172800">2 Days</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
 
 
 
-          </CardContent>
+        </CardContent>
 
-        </Card>
-        {errorMessage && (
+      </Card>
+      {errorMessage && (
         <div className="text-sm text-destructive pt-2 mb-4">{errorMessage}</div>
       )}
-        <Button className='absolute bottom-4 left-4 right-4 font-semibold h-10 ' type="submit" disabled={isSubmitting}>Generate Invoice</Button>
-      </form>
+      <Button className='absolute bottom-4 left-4 right-4 font-semibold h-10 ' type="submit" disabled={isSubmitting}>Generate Invoice</Button>
+    </form>
   );
 }

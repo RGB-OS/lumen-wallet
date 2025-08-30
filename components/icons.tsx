@@ -1,4 +1,4 @@
-import { Settings,ArrowDownLeft,ArrowUpRight,Plus,ChevronLeft,EllipsisVertical,SendHorizontal,Layers, LogOut,Copy, Menu ,RefreshCw,Download} from "lucide-react"
+import { Settings,ArrowDownLeft,Wallet,CircleAlert,X,Check,ArrowUpRight,Plus,ChevronLeft,EllipsisVertical,SendHorizontal,Layers, LogOut,Copy, Menu ,RefreshCw,Download} from "lucide-react"
 
 type IconProps = React.HTMLAttributes<SVGElement>
 export const Icons = {
@@ -15,6 +15,10 @@ export const Icons = {
     plus: Plus,
     arrowDownLeft: ArrowDownLeft,
     arrowUpRight: ArrowUpRight,
+    check: Check,
+    x: X,
+    wallet: Wallet,
+    circleAlert: CircleAlert,
     
     thunderGradient: (props: any) => (<svg xmlns="http://www.w3.org/2000/svg" width="38" height="48" viewBox="0 0 38 48" fill="none" {...props}>
         <path d="M26.5011 4.40584L22.1632 18.5329L21.6859 20.087L23.3117 20.0851L35.1572 20.0714L12.2985 43.5942L16.6364 29.4671L17.1137 27.913L15.4879 27.9149L3.6424 27.9286L26.5011 4.40584Z" stroke="url(#paint0_linear_286_1159)" strokeWidth="2.4" />

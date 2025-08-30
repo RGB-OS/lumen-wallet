@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
+import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListAssetsResponse, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
     asset_id: string | undefined;
@@ -36,7 +36,7 @@ class NodeService {
     }
 
     async listassets() {
-        const res = await apiClient.post('/listassets', {
+        const res = await apiClient.post<ListAssetsResponse>('/listassets', {
             filter_asset_schemas: ['Nia', 'Uda', 'Cfa'],
         });
         return res.data;
@@ -85,7 +85,7 @@ class NodeService {
         if (batch_transfer_idx === null) {
             throw new Error('Missing required parameters for failtransfer');
         }
-        const res = await apiClient.post('/failtransfers', { batch_transfer_idx, no_asset_only: false, skip_sync: false });
+        const res = await apiClient.post('/failtransfers', { batch_transfer_idx, no_asset_only: false, skip_sync: true });
         return res.data;
 
     }

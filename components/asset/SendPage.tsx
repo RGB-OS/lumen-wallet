@@ -10,8 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { useState, useMemo, useEffect } from 'react';
 import { InvoiceDecoded } from '@/types/rgb-types';
 import { nodeService } from '@/services/nodeService';
+import { walletService } from '@/services/walletService';
 import { useListAssets } from '@/hooks/useWalletQueries';
 import z from 'zod';
+import { TXIdResponse } from 'rgb-webln-sdk';
 
 const schema = z.object({
   invoice: z.string().min(1, 'Invoice is required').startsWith('rgb:', 'Must start with rgb:'),
@@ -102,28 +104,29 @@ export default function SendAssetPage() {
     }
 
     try {
-
-      const decodeAssignment = decodedInvoice?.assignment
-      const response = await nodeService.sendasset({
+      // Prepare transaction data
+      const transactionData = {
         assignment: {
           type: "Fungible",
           value: +data.amount as number, // Ensure amount is a number
         },
-        asset_id: decodedInvoice.asset_id,
+        asset_id: asset_id,
         recipient_id: decodedInvoice.recipient_id,
         transport_endpoints: decodedInvoice.transport_endpoints,
         min_confirmations: 1,
         donation: data.donation,
         fee_rate: data.fee === 'low' ? 2 : data.fee === 'high' ? 10 : 5,
         skip_sync: false,
-      })
+      };
 
-
+      // Show confirmation popup
+      const response = await walletService.openTransactionConfirmationPopup(transactionData);
+      console.log('Transaction response:', response);
       setTxid(response.txid);
       setErrorMsg(null);
     } catch (err: any) {
       console.error('Send asset failed:', err);
-      setError('invoice', { type: 'manual', message: 'Send asset failed' });
+      setError('invoice', { type: 'manual', message: err.message || 'Send asset failed' });
       setTxid(null);
     }
   };

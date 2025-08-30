@@ -12,6 +12,9 @@ import SendAssetPage from '@/components/asset/SendPage';
 import ReceiveAssetPage from '@/components/asset/ReciveAssetPage';
 import { UTXOsPageRefactored as UTXOsPage } from '@/components/wallet/UTXOsPageRefactored';
 import Approval from '@/components/approval';
+import TransactionConfirmation from '@/components/asset/TransactionConfirmation';
+import MessageSigningConfirmation from '@/components/asset/MessageSigningConfirmation';
+import InvoiceGenerationConfirmation from '@/components/asset/InvoiceGenerationConfirmation';
 import { QueryProvider } from '@/providers/queryProvider';
 import { ConfirmProvider } from '@/providers/confirmProvider';
 import { ToastProvider } from '@/providers/toastProvider';
@@ -38,6 +41,9 @@ function App() {
                 
                 <Route path="/login" element={<ConnectNode />} />
                 <Route path="/approval" element={<Approval />} />
+                <Route path="/confirm-transaction" element={<TransactionConfirmation />} />
+                <Route path="/confirm-message-signing" element={<MessageSigningConfirmation />} />
+                <Route path="/confirm-invoice-generation" element={<InvoiceGenerationConfirmation />} />
                 <Route path="/" element={<ConnectNode />} />
                 <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
                   <Route index element={<WalletDashboard />} />

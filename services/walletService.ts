@@ -1,5 +1,6 @@
 import { authService } from "./authService";
 import { nodeService } from "./nodeService";
+import { WalletError, WalletPermissionError } from '@/utils/wallet-errors';
 
 interface GetInfoResponse {
     node: {
@@ -38,9 +39,9 @@ class WalletService {
                 console.warn('User is not authenticated, opening login popup');
                 await this.openLoginPopup();
             }
-            return 
+            return
         }
-        console.log('Requesting user approval for origin:', origin,`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
+        console.log('Requesting user approval for origin:', origin, `/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
         const url = browser.runtime.getURL(`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
 
         const popup = await browser.windows.create({
@@ -50,7 +51,7 @@ class WalletService {
             height: 620,
         });
 
-        const approved =await new Promise((resolve) => {
+        const approved = await new Promise((resolve) => {
             const handler = (response: any, _sender: any, sendResponse: any) => {
                 console.log('Received approval response:', response);
                 if (response.type === 'webln-approval-response') {
@@ -62,7 +63,7 @@ class WalletService {
             browser.runtime.onMessage.addListener(handler);
             console.log('Waiting for user approval...');
         });
-        if(!approved){
+        if (!approved) {
             throw new WalletPermissionError(origin);
         }
         this.enabledOrigins.add(origin);
@@ -99,10 +100,10 @@ class WalletService {
         }
         const session = await authService.isAuthenticated();
         if (!session) throw new WalletPermissionError('User not authenticated');
-    
+
         try {
             const data = await nodeService.nodeinfo();
-     
+
             return {
                 node: {
                     alias: 'ThunderStack',
@@ -110,7 +111,7 @@ class WalletService {
                 },
                 methods: ['makeInvoice', 'sendPayment', 'keysend', 'getInfo', 'request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
             }
-        } catch (e:any) {
+        } catch (e: any) {
             console.error('Failed to get node info:', e);
             throw new WalletNodeError('getInfo', e?.message);
         }
@@ -149,6 +150,10 @@ class WalletService {
                 case 'decodergbinvoice':
                     return await nodeService.decodergbinvoice(params);
                 case 'rgbinvoice':
+                    // Show invoice generation confirmation popup for external requests
+                    if (origin !== this.trustedOrigin) {
+                        return await this.openInvoiceGenerationConfirmationPopup(params);
+                    }
                     return await nodeService.rgbinvoice(params);
                 case 'address':
                     return await nodeService.getaddress();
@@ -157,13 +162,17 @@ class WalletService {
                 case 'listtransfers':
                     return await nodeService.listtransfers(params);
                 case 'sendasset':
-                    return await nodeService.sendasset(params);
+                    // Show transaction confirmation popup for external requests
+                    return await this.openTransactionConfirmationPopup(params);
+                    // return await nodeService.sendasset(params);
                 case 'createutxos':
                     return await nodeService.createutxos(params);
                 case 'refreshtransfers':
                     return await nodeService.refreshtransfers(params);
                 case 'signmessage':
-                    return await nodeService.signmessage(params);
+                    // Show message signing confirmation popup for external requests
+                    return await this.openMessageSigningConfirmationPopup(params);
+                    // return await nodeService.signmessage(params);
                 default:
                     throw new WalletError(`Unknown request method: ${method}`);
             }
@@ -173,29 +182,145 @@ class WalletService {
         }
     }
 
+
+
     private async openLoginPopup(): Promise<void> {
         const loginUrl = browser.runtime.getURL('/popup.html#/login?from=external');
         await browser.windows.create({
-          url: loginUrl,
-          type: 'popup',
-          width: 420,
-          height: 620,
+            url: loginUrl,
+            type: 'popup',
+            width: 420,
+            height: 620,
         });
-    
+
         await new Promise<void>((resolve, reject) => {
-          const handler = (msg: any) => {
-            if (msg.type === 'wallet-auth-response') {
-              browser.runtime.onMessage.removeListener(handler);
-              if (msg.success) {
-                resolve();
-              } else {
-                reject(new WalletPermissionError('Wrong credentials'));
-              }
-            }
-          };
-          browser.runtime.onMessage.addListener(handler);
+            const handler = (msg: any) => {
+                if (msg.type === 'wallet-auth-response') {
+                    browser.runtime.onMessage.removeListener(handler);
+                    if (msg.success) {
+                        resolve();
+                    } else {
+                        reject(new WalletPermissionError('Wrong credentials'));
+                    }
+                }
+            };
+            browser.runtime.onMessage.addListener(handler);
         });
-      }
+    }
+
+    async openTransactionConfirmationPopup(transactionData: any): Promise<any> {
+        // Handle different assignment structures (amount vs value, type vs default)
+        const assignment = transactionData.assignment || {};
+        const assignmentValue = assignment.value || assignment.amount || 0;
+        const assignmentType = assignment.type || 'Fungible'; // Default to Fungible if not specified
+
+        // Build URL with transaction data as query parameters
+        const params = new URLSearchParams({
+            recipient_id: transactionData.recipient_id,
+            asset_id: transactionData.asset_id,
+            assignment_type: assignmentType,
+            assignment_value: assignmentValue.toString(),
+            transport_endpoints: transactionData.transport_endpoints.join(','),
+            donation: transactionData.donation?.toString() || 'false',
+            fee_rate: transactionData.fee_rate?.toString() || '5', // Default to medium fee rate
+            min_confirmations: transactionData.min_confirmations?.toString() || '1', // Default to 1 confirmation
+            skip_sync: transactionData.skip_sync?.toString() || 'false'
+        });
+
+        const confirmUrl = browser.runtime.getURL(`/popup.html#/confirm-transaction?${params.toString()}`);
+
+        const popup = await browser.windows.create({
+            url: confirmUrl,
+            type: 'popup',
+            width: 420,
+            height: 720,
+        });
+
+        return new Promise<any>((resolve, reject) => {
+            const handler = (msg: any) => {
+                if (msg.type === 'transaction-confirmation-response') {
+                    browser.runtime.onMessage.removeListener(handler);
+                    if (msg.success) {
+                        resolve(msg.result);
+                    } else {
+                        reject(new WalletError(msg.error || 'Transaction rejected'));
+                    }
+                }
+            };
+            browser.runtime.onMessage.addListener(handler);
+        });
+    }
+
+    private async openMessageSigningConfirmationPopup(messageData: any): Promise<any> {
+        // Build URL with message data as query parameters
+        const params = new URLSearchParams({
+            message: messageData.message
+        });
+
+        console.log('Opening message signing confirmation popup with params:', messageData);
+        const confirmUrl = browser.runtime.getURL(`/popup.html#/confirm-message-signing?${params.toString()}`);
+
+        const popup = await browser.windows.create({
+            url: confirmUrl,
+            type: 'popup',
+            width: 420,
+            height: 600,
+        });
+
+        return new Promise<any>((resolve, reject) => {
+            const handler = (msg: any) => {
+                if (msg.type === 'message-signing-response') {
+                    browser.runtime.onMessage.removeListener(handler);
+                    if (msg.success) {
+                        resolve(msg.result);
+                    } else {
+                        reject(new WalletError(msg.error || 'Message signing cancelled'));
+                    }
+                }
+            };
+            browser.runtime.onMessage.addListener(handler);
+        });
+    }
+
+    async openInvoiceGenerationConfirmationPopup(invoiceData: any): Promise<any> {
+        // Build URL with invoice data as query parameters
+        const params = new URLSearchParams();
+        
+        if (invoiceData.asset_id) {
+            params.append('asset_id', invoiceData.asset_id);
+        }
+        if (invoiceData.amount) {
+            params.append('amount', invoiceData.amount.toString());
+        }
+        params.append('duration_seconds', invoiceData.duration_seconds.toString());
+        params.append('witness', invoiceData.witness.toString());
+        if (invoiceData.blind !== undefined) {
+            params.append('blind', invoiceData.blind.toString());
+        }
+
+        const confirmUrl = browser.runtime.getURL(`/popup.html#/confirm-invoice-generation?${params.toString()}`);
+        
+        const popup = await browser.windows.create({
+            url: confirmUrl,
+            type: 'popup',
+            width: 420,
+            height: 600,
+        });
+
+        return new Promise<any>((resolve, reject) => {
+            const handler = (msg: any) => {
+                if (msg.type === 'invoice-generation-response') {
+                    browser.runtime.onMessage.removeListener(handler);
+                    if (msg.success) {
+                        resolve(msg.result);
+                    } else {
+                        reject(new WalletError(msg.error || 'Invoice generation cancelled'));
+                    }
+                }
+            };
+            browser.runtime.onMessage.addListener(handler);
+        });
+    }
 }
 
 export const walletService = new WalletService();
