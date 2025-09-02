@@ -24,9 +24,10 @@ export default defineUnlistedScript(() => {
           console.log(res)
           if (res.error) {
             const { message, type, code } = res.error;
-            const err = new Error(message || 'Unknown error');
-            (err as any).type = type;
-            (err as any).code = code;
+            const errorMessage = message || 'Unknown error';
+            const err = new Error(typeof errorMessage === 'string' ? errorMessage : 'Unknown error');
+            (err as any).type = type || 'UnknownError';
+            (err as any).code = code || 'UNSPECIFIED';
             reject(err);
           } else {
             resolve(res.result);
@@ -43,7 +44,11 @@ export default defineUnlistedScript(() => {
       getInfo: () => callWebLN('getInfo'),
       getBalance: () => callWebLN('getBalance'),
       getAddress: () =>  callWebLN('request', { method:'address' }),
-      rgbInvoice:(params)=> callWebLN('request', { method: 'rgbInvoice', params }),
+      rgbInvoice:(params)=> {
+        // Ensure params is an object and provide defaults
+        const safeParams = params || {};
+        return callWebLN('request', { method: 'rgbinvoice', params: safeParams });
+      },
       decodeRgbInvoice: (params) => callWebLN('request', { method: 'decodergbinvoice', params }),
       sendAsset: (params) => callWebLN('request', { method: 'sendasset', params }),
       listTransfers: (params) => callWebLN('request', { method: 'listtransfers', params }),

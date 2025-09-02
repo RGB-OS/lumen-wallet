@@ -2,11 +2,12 @@ import apiClient from './apiClient';
 import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListAssetsResponse, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
-    asset_id: string | undefined;
-    amount: number | undefined;
+    asset_id?: string;
+    amount?: number;
     duration_seconds: number;
     min_confirmations: number;
     witness: boolean;
+    blind?: boolean;
 };
 type RgbInvoiceResponse = {
     invoice: string;
@@ -65,13 +66,28 @@ class NodeService {
             amount,
             duration_seconds = 86400,
             min_confirmations = 1,
+            witness = false,
+            blind = false,
         } = params ?? {};
-        const res = await apiClient.post<RgbInvoiceResponse>('/rgbinvoice', {
-            asset_id,
-            amount,
+        
+        // Build request body with only defined values
+        const requestBody: any = {
             duration_seconds,
             min_confirmations,
-        });
+            witness,
+        };
+        
+    
+        
+        // Only include asset_id and amount if they are defined and it's not a blind invoice
+        if (!blind && asset_id !== undefined) {
+            requestBody.asset_id = asset_id;
+        }
+        if (!blind && amount !== undefined) {
+            requestBody.amount = amount;
+        }
+        
+        const res = await apiClient.post<RgbInvoiceResponse>('/rgbinvoice', requestBody);
         return res.data;
     }
 

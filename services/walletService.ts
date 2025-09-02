@@ -292,11 +292,13 @@ class WalletService {
         if (invoiceData.amount) {
             params.append('amount', invoiceData.amount.toString());
         }
-        params.append('duration_seconds', invoiceData.duration_seconds.toString());
-        params.append('witness', invoiceData.witness.toString());
-        if (invoiceData.blind !== undefined) {
-            params.append('blind', invoiceData.blind.toString());
-        }
+        // Provide defaults for required fields
+        params.append('duration_seconds', (invoiceData.duration_seconds || 3600).toString());
+        params.append('witness', (invoiceData.witness || false).toString());
+        
+        // If no asset_id and no amount are provided, it should be a blind invoice
+        const isBlind = invoiceData.blind !== undefined ? invoiceData.blind : (!invoiceData.asset_id && !invoiceData.amount);
+        params.append('blind', isBlind.toString());
 
         const confirmUrl = browser.runtime.getURL(`/popup.html#/confirm-invoice-generation?${params.toString()}`);
         

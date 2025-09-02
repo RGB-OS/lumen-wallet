@@ -42,12 +42,15 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
       return null;
     }
 
+    // If no asset_id is provided, it should be treated as a blind invoice
+    const isBlind = blind === 'true' || (!assetId && !amount);
+    
     return {
       asset_id: assetId || undefined,
       amount: amount ? parseInt(amount) : undefined,
       duration_seconds: parseInt(durationSeconds),
       witness: witness === 'true',
-      blind: blind === 'true'
+      blind: isBlind
     };
   };
 
