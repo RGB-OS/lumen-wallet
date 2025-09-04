@@ -18,6 +18,12 @@ type DecodeInvoiceRequest = {
 type TXIdResponse = {
     txid: string;
 };
+type SendBTCRequest = {
+    amount: number;
+    address: string;
+    fee_rate: number;
+    skip_sync: boolean;
+};
 
 class NodeService {
 
@@ -174,6 +180,17 @@ class NodeService {
             throw new Error('Message is required for signmessage');
         }
         const res = await apiClient.post<{ signed_message: string }>('/signmessage', { message });
+        return res.data;
+    }
+
+    async sendbtc(params: SendBTCRequest) {
+        const { amount, address, fee_rate, skip_sync } = params;
+        if (!amount || !address) {
+            throw new Error('Missing required parameters for sendbtc');
+        }
+        const res = await apiClient.post<TXIdResponse>('/sendbtc', {
+            amount, address, fee_rate, skip_sync
+        });
         return res.data;
     }
 }

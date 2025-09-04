@@ -165,3 +165,10 @@ export const useWalletRefetch = () => {
     },
   };
 };
+
+// Send BTC mutation
+export const useSendBTC = () => {
+  return useMutation({
+    mutationFn: (params: { amount: number; address: string; fee_rate: number; skip_sync: boolean }) => nodeService.sendbtc(params),
+  });
+};

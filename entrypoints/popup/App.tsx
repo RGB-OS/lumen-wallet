@@ -12,6 +12,8 @@ import SendAssetPage from '@/components/asset/SendPage';
 import ReceiveAssetPage from '@/components/asset/ReciveAssetPage';
 import { UTXOsPageRefactored as UTXOsPage } from '@/components/wallet/UTXOsPageRefactored';
 import ReceiveBTCPage from '@/components/wallet/ReceiveBTCPage';
+import SendRecipient from '@/components/wallet/SendRecipient';
+import SendBTCPage from '@/components/wallet/SendBTCPage';
 import Approval from '@/components/approval';
 import TransactionConfirmation from '@/components/asset/TransactionConfirmation';
 import MessageSigningConfirmation from '@/components/asset/MessageSigningConfirmation';
@@ -63,7 +65,9 @@ function App() {
                 <Route path="/" element={<ConnectNode />} />
                 <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
                   <Route index element={<WalletDashboard />} />
+                  <Route path="recipient" element={<SendRecipient />} />
                   <Route path="send" element={<SendAssetPage />} />
+                  <Route path="send-btc" element={<SendBTCPage />} />
                   <Route path="send/:asset_id" element={<SendAssetPage />} />
                   <Route path="asset/:asset_id" element={<AssetPage />} />
                  

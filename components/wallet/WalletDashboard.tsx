@@ -149,7 +149,7 @@ const TransactionButtons = () => {
         </div>
 
         <div className="flex flex-col items-center space-y-2">
-            <Link to="/wallet/send">
+            <Link to="/wallet/recipient">
                 <Button className="size-16 text-foreground bg-white rounded-2xl" variant="outline" >
                     <Icons.send className="size-8" />
                 </Button>

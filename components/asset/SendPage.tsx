@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useMemo, useEffect } from 'react';
 import { InvoiceDecoded } from '@/types/rgb-types';
 import { nodeService } from '@/services/nodeService';
@@ -28,6 +29,7 @@ const schema = z.object({
 type SendAssetForm = z.infer<typeof schema>;
 
 export default function SendAssetPage() {
+  const location = useLocation();
   const {
     register,
     handleSubmit,
@@ -54,14 +56,30 @@ export default function SendAssetPage() {
   const [txid, setTxid] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const invoiceVal = watch('invoice');
+  const initialInvoice = (location.state as any)?.invoice as string | undefined;
+  const [selectedAssetId, setSelectedAssetId] = useState(asset_id || '');
 
   const asset = useMemo(() => {
-    if (!assetsData || !asset_id) return null;
+    if (!assetsData || !selectedAssetId) return null;
     const all = [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
-    return all.find((a) => a.asset_id === asset_id);
-  }, [assetsData, asset_id]);
+    return all.find((a) => a.asset_id === selectedAssetId);
+  }, [assetsData, selectedAssetId]);
+
+  const allAssets = useMemo(() => {
+    if (!assetsData) return [];
+    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
+  }, [assetsData]);
 
   useEffect(() => {
+    if (asset_id && !asset && allAssets.length > 0) {
+      setSelectedAssetId(allAssets[0].asset_id);
+    }
+  }, [asset_id, asset, allAssets]);
+
+  useEffect(() => {
+    if (initialInvoice && !invoiceVal) {
+      setValue('invoice', initialInvoice);
+    }
     const decode = async () => {
       if (!invoiceVal) return;
       if (!invoiceVal.startsWith('rgb:')) return;
@@ -76,7 +94,7 @@ export default function SendAssetPage() {
 
         setDecodedInvoice(data);
 
-        if (data.asset_id === asset_id && data.assignment?.value) {
+        if (data.asset_id === selectedAssetId && data.assignment?.value) {
           const value = data.assignment.value;
           setValue('amount', value);
           setPrefilledAmount(value);
@@ -93,7 +111,7 @@ export default function SendAssetPage() {
     };
 
     decode();
-  }, [invoiceVal, asset_id, setValue]);
+  }, [invoiceVal, selectedAssetId, setValue]);
 
 
   const onSubmit = async (data: SendAssetForm) => {
@@ -110,7 +128,7 @@ export default function SendAssetPage() {
           type: "Fungible",
           value: +data.amount as number, // Ensure amount is a number
         },
-        asset_id: asset_id,
+        asset_id: selectedAssetId,
         recipient_id: decodedInvoice.recipient_id,
         transport_endpoints: decodedInvoice.transport_endpoints,
         min_confirmations: 1,
@@ -132,8 +150,41 @@ export default function SendAssetPage() {
   };
   const handleDone = () => {
     setTxid(null);
-    navigate(`/wallet/asset/${asset_id}`);
+    navigate(`/wallet/asset/${selectedAssetId}`);
   }
+  if (!assetsData) return <div className="p-6">Loading assets...</div>;
+
+  if (!asset && allAssets.length === 0) return <div className="p-6 text-destructive">No assets found</div>;
+
+  if (!asset && allAssets.length > 0) {
+    return (
+      <div className="flex-1 w-full h-full space-y-6 px-6">
+        <Card className='rounded-lg shadow-md'>
+          <CardContent className="space-y-6">
+            <div className="space-y-2 w-full">
+              <Label className='text-gray-dark uppercase text-xs' htmlFor="asset">Select Asset</Label>
+              <Select  value={selectedAssetId} onValueChange={(value) => setSelectedAssetId(value)}>
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder="Choose an asset to send" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAssets.map((asset) => (
+                    <SelectItem key={asset.asset_id} value={asset.asset_id}>
+                      {asset.name || asset.ticker || asset.asset_id} ({asset.ticker || 'N/A'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => navigate(`/wallet/send/${selectedAssetId}`)} className='w-full font-semibold h-10'>
+              Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!asset) return <div className="p-6 text-destructive">Asset not found</div>;
 
   const formattedBalance = (asset.balance.spendable / Math.pow(10, asset.precision)).toLocaleString();
