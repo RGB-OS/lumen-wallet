@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Bitcoin, Send, Download, Coins, User } from "lucide-react";
 
 // import { SignatureAuth } from "./SignatureAuth";
-import { Wallet, Send, FileText, Settings, Copy, Eye } from "lucide-react";
+import { Wallet, FileText, Settings, Copy, Eye } from "lucide-react";
 import { AssetDisplay } from "./AssetDisplay";
 import { TransactionForm } from "./TransactionForm";
 import { useToastActions } from "@/hooks/useToastActions";
@@ -16,9 +16,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Header } from "./Header";
 import { 
   useAddress, 
-  useNetworkInfo 
+  useNetworkInfo,
+  useListTransactions
 } from "@/hooks/useWalletQueries";
-// import { useToast } from "@/hooks/use-toast";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Icons } from "@/components/icons";
+import { twMerge } from "tailwind-merge";
+import { TransactionButtons } from "./TransactionButtons";
+import { TransactionDetails, TransactionsDisplay } from "./TransactionsDisplay";
 
 // interface WalletDashboardProps {
 //     mnemonic: string;
@@ -29,6 +34,8 @@ export const WalletDashboard = () => {
     const [publicKey, setPublicKey] = useState<string>("");
     const [showPrivateInfo, setShowPrivateInfo] = useState(false);
     const [totalValue, setTotalValue] = useState("0.00");
+    const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     const { showCopiedToClipboard, showError } = useToastActions();
     
@@ -45,6 +52,12 @@ export const WalletDashboard = () => {
       error: networkError 
     } = useNetworkInfo();
 
+    const {
+      data: transactionsData,
+      isLoading: transactionsLoading,
+      error: transactionsError
+    } = useListTransactions();
+
     const copyToClipboard = async (text: string, label: string) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -54,7 +67,15 @@ export const WalletDashboard = () => {
         }
     };
 
+    const handleTransactionClick = (transaction: any) => {
+      setSelectedTransaction(transaction);
+      setDrawerOpen(true);
+    };
 
+    const handleCloseDrawer = () => {
+      setDrawerOpen(false);
+      setSelectedTransaction(null);
+    };
 
     return (
         <div className="min-h-screen w-full  ">
@@ -97,7 +118,7 @@ export const WalletDashboard = () => {
                 <Tabs defaultValue="assets" className="w-full gap-0">
                     <TabsList className="grid w-full grid-cols-2 bg-card p-0 ">
                         <TabsTrigger className="" value="assets">Assets</TabsTrigger>
-                        <TabsTrigger className="" value="nft ">Activities</TabsTrigger>
+                        <TabsTrigger className="" value="activities">Activities</TabsTrigger>
                         {/* <TabsTrigger value="transaction">Transaction</TabsTrigger> */}
                         {/* <TabsTrigger value="signature">Signature Auth</TabsTrigger> */}
                     </TabsList>
@@ -106,8 +127,13 @@ export const WalletDashboard = () => {
                         <AssetDisplay />
                     </TabsContent>
 
-                    <TabsContent value="nft" className="space-y-4">
-                        <TransactionForm publicKey={publicKey} />
+                    <TabsContent value="activities" className="space-y-4">
+                        <TransactionsDisplay 
+                          transactions={transactionsData?.transactions || []}
+                          isLoading={transactionsLoading}
+                          error={transactionsError}
+                          onTransactionClick={handleTransactionClick}
+                        />
                     </TabsContent>
 
                     {/* <TabsContent value="signature" className="space-y-4">
@@ -115,53 +141,21 @@ export const WalletDashboard = () => {
                     </TabsContent> */}
                 </Tabs>
             </div>
-        </div>
-    );
+
+      {/* Transaction Details Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent>
+          {/* <DrawerHeader>
+            <DrawerTitle>Transaction Details</DrawerTitle>
+          </DrawerHeader> */}
+          {selectedTransaction && (
+            <TransactionDetails
+              transaction={selectedTransaction}
+              onClose={handleCloseDrawer}
+            />
+          )}
+        </DrawerContent>
+      </Drawer>
+    </div>
+  );
 };
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Icons } from "@/components/icons";
-
-const TransactionButtons = () => {
-    const navigate = useNavigate();
-    return <>
-        <div className="flex flex-col items-center space-y-2">
-            <Drawer>
-                <DrawerTrigger asChild>
-                    <Button className="size-16 text-foreground bg-white rounded-2xl" variant="outline" >
-                        <Icons.recive className="size-8" />
-                    </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                    <DrawerHeader>
-                        <DrawerTitle className="text-center text-lg">Select receive option</DrawerTitle>
-                    </DrawerHeader>
-                    <div className="p-4 grid gap-3">
-                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive')}>
-                            Receive RGB Asset
-                        </Button>
-                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive-btc')}>
-                            Receive Bitcoin on-chain
-                        </Button>
-                    </div>
-                </DrawerContent>
-            </Drawer>
-            <span>Recive</span>
-        </div>
-
-        <div className="flex flex-col items-center space-y-2">
-            <Link to="/wallet/recipient">
-                <Button className="size-16 text-foreground bg-white rounded-2xl" variant="outline" >
-                    <Icons.send className="size-8" />
-                </Button>
-            </Link>
-            <span>Send</span>
-        </div>
-        <div className="flex flex-col items-center space-y-2">
-            <Link to="/wallet/utxos">
-                <Button className="size-16 bg-white rounded-2xl" variant="outline" >
-                    <Icons.layers className="size-8" />
-                </Button>
-            </Link>
-            <span>UTXOs</span>
-        </div></>
-}

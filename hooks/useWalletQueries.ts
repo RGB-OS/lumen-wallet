@@ -19,6 +19,7 @@ export const queryKeys = {
   listAssets: ['listAssets'],
   listTransfers: (assetId: string) => ['listTransfers', assetId],
   listUnspents: ['listUnspents'],
+  listTransactions: ['listTransactions'],
   address: ['address'],
   networkInfo: ['networkInfo'],
 } as const;
@@ -87,6 +88,15 @@ export const useNetworkInfo = () => {
     queryKey: queryKeys.networkInfo,
     queryFn: () => nodeService.networkinfo(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// List Transactions
+export const useListTransactions = () => {
+  return useQuery({
+    queryKey: queryKeys.listTransactions,
+    queryFn: () => nodeService.listtransactions(),
+    staleTime: 1000 * 30, // 30 seconds
   });
 };
 

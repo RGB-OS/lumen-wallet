@@ -12,7 +12,7 @@ import {
   DrawerHeader, 
   DrawerTitle 
 } from '@/components/ui/drawer';
-import { TransactionDetails } from './TransactionDetails';
+import { TransferDetails } from './TransferDetails';
 import { formatAddress } from '@/utils';
 import { Icons } from '@/components/icons';
 import { useDrawer } from '@/hooks/useDrawer';
@@ -213,11 +213,11 @@ export const AssetPage = () => {
       {/* Transaction Details Drawer */}
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
-          <DrawerHeader>
+          {/* <DrawerHeader>
             <DrawerTitle>Transaction Details</DrawerTitle>
-          </DrawerHeader>
+          </DrawerHeader> */}
           {selectedTransaction && asset && (
-            <TransactionDetails
+            <TransferDetails
               transaction={selectedTransaction}
               asset={asset}
               onClose={handleCloseDrawer}

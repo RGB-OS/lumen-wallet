@@ -30,14 +30,14 @@ const statusColors: any = {
   Failed: "text-[#EB1932]",
 }
 
-interface TransactionDetailsProps {
+interface TransferDetailsProps {
   transaction: RgbTransfer;
   asset: any;
   onClose?: () => void;
   onTransactionUpdate?: () => void;
 }
 
-export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
+export const TransferDetails: React.FC<TransferDetailsProps> = ({
   transaction,
   asset,
   onClose,

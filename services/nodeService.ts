@@ -25,6 +25,20 @@ type SendBTCRequest = {
     skip_sync: boolean;
 };
 
+type ListTransactionsResponse = {
+    transactions: Array<{
+        transaction_type: string;
+        txid: string;
+        received: number;
+        sent: number;
+        fee: number;
+        confirmation_time: {
+            height: number;
+            timestamp: number;
+        };
+    }>;
+};
+
 class NodeService {
 
     async nodeinfo() {
@@ -180,6 +194,12 @@ class NodeService {
             throw new Error('Message is required for signmessage');
         }
         const res = await apiClient.post<{ signed_message: string }>('/signmessage', { message });
+        return res.data;
+    }
+
+    async listtransactions(params?: { skip_sync?: boolean }) {
+        const { skip_sync = false } = params ?? {};
+        const res = await apiClient.post<ListTransactionsResponse>('/listtransactions', { skip_sync });
         return res.data;
     }
 
