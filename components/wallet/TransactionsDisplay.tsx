@@ -3,6 +3,7 @@ import { RefreshCw, TrendingUp, TrendingDown, Bitcoin, Send, Download, Coins, Us
 import { twMerge } from "tailwind-merge";
 import { formatAddress } from "@/utils";
 import { Card, CardContent } from "../ui/card";
+import { TxSkeleton } from "./TxSkeleton";
 
 export const TransactionsDisplay = ({ 
     transactions, 
@@ -45,7 +46,7 @@ export const TransactionsDisplay = ({
       }
     };
   
-    if (isLoading) return <div className="p-6">Loading transactions...</div>;
+    if (isLoading) return <TxSkeleton/>;
     if (error) return <div className="p-6 text-destructive">Failed to load transactions</div>;
     if (!transactions || transactions.length === 0) return <div className="p-6 text-muted-foreground">No transactions found</div>;
   

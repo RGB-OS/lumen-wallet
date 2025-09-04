@@ -14,7 +14,7 @@ export const BTCBalanceCard = () => {
   }, [data]);
   
   if (isLoading) {
-    return <div className="h-6 w-32 animate-pulse bg-gray-300 rounded" />;
+    return <div className="h-6 w-32 mt-1 animate-pulse bg-gray-300 rounded" />;
   }
 
   if (error) {

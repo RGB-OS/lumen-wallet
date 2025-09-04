@@ -17,14 +17,14 @@ export const TransactionButtons = () => {
                     </Button>
                 </DrawerTrigger>
                 <DrawerContent>
-                    <DrawerHeader>
-                        <DrawerTitle className="text-center text-lg">Select receive option</DrawerTitle>
-                    </DrawerHeader>
-                    <div className="p-4 grid gap-3">
-                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive')}>
+                    {/* <DrawerHeader>
+                        <DrawerTitle className="text-center text-mg">Select receive option</DrawerTitle>
+                    </DrawerHeader> */}
+                    <div className="p-4 grid gap-3 pb-12">
+                        <Button  className="w-full text-lg h-12 bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive')}>
                             Receive RGB Asset
                         </Button>
-                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive-btc')}>
+                        <Button  className="w-full text-lg h-12 bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive-btc')}>
                             Receive Bitcoin on-chain
                         </Button>
                     </div>

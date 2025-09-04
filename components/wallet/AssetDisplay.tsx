@@ -7,6 +7,7 @@ import { satoshisToBTC } from "@/utils";
 import { Asset } from "@/types/rgb-types";
 import { Link, useNavigate } from "react-router-dom";
 import { useBTCBalance, useListAssets } from "@/hooks/useWalletQueries";
+import { TxSkeleton } from "./TxSkeleton";
 
 
 
@@ -116,21 +117,7 @@ export const AssetDisplay = () => {
       {/* Asset List */}
 
       {btcLoading || assetsLoading ? (
-        <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="flex items-center space-x-4 border border-border rounded-lg animate-pulse">
-              <div className="h-10 w-10 bg-muted rounded-full"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-muted rounded w-24"></div>
-                <div className="h-3 bg-muted rounded w-32"></div>
-              </div>
-              <div className="text-right space-y-2">
-                <div className="h-4 bg-muted rounded w-20"></div>
-                <div className="h-3 bg-muted rounded w-16"></div>
-              </div>
-            </div>
-          ))}
-        </div>
+       <TxSkeleton/>
       ) : (
         <div className="space-y-1 px-1">
           {assets.map((asset) => (

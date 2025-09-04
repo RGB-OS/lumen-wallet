@@ -137,15 +137,16 @@ export const WalletDashboard = () => {
             <Card className="py-4">
 
                 <CardContent>
-                    <div className="flex justify-center space-x-4">
+                    <div className="flex justify-center justify-center space-x-4">
                         {/* <div className="h-12 w-12 bg-gradient-to-r from-bitcoin to-accent rounded-full flex items-center justify-center">
               <Bitcoin className="h-6 w-6 text-bitcoin-foreground" />
             </div> */}
-                        <div className="text-center">
+                        <div className="text-center ">
+
                             {networkData ? (
                               <p className="text-sm text-muted-foreground opacity-60">{networkData.network}</p>
                             ) : networkLoading ? (
-                              <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>
+                              <p className="h-5 w-24 mx-auto mt-1 animate-pulse bg-gray-300 rounded"></p>
                             ) : networkError ? (
                               <p className="text-xs text-red-500">Network info unavailable</p>
                             ) : null}
@@ -156,7 +157,7 @@ export const WalletDashboard = () => {
                                 <Copy className="w-4 h-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => copyToClipboard(addressData.address, "Address")} />
                               </p>
                             ) : addressLoading ? (
-                              <p className="h-6 w-24 animate-pulse bg-gray-300 rounded"></p>
+                              <p className="h-5 w-24 mx-auto mt-1 animate-pulse bg-gray-300 rounded"></p>
                             ) : addressError ? (
                               <p className="text-xs text-red-500">Address unavailable</p>
                             ) : null}
