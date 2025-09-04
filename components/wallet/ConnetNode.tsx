@@ -11,6 +11,7 @@ import { storage } from '#imports';
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 // import { useToast } from "@/hooks/use-toast";
+import lumenIcon from '@/assets/logo.png';
 
 const connectNodeSchema = z.object({
   nodeEndpoint: z.string().min(1, "Node endpoint is required"),
@@ -40,7 +41,13 @@ export const ConnectNode = () => {
     formState: { errors },
   } = useForm<ConnectNodeForm>({
     resolver: zodResolver(connectNodeSchema),
+    defaultValues: {
+      nodeEndpoint: import.meta.env.VITE_DEFAULT_NODE_ENDPOINT || '',
+      accessToken: import.meta.env.VITE_DEFAULT_ACCESS_TOKEN || '',
+    },
   });
+
+  console.log('defaultValues', import.meta.env.VITE_DEFAULT_NODE_ENDPOINT);
 
   useEffect(() => {
     if (!authorizing && isAuthenticated) {
@@ -105,7 +112,8 @@ export const ConnectNode = () => {
       <div className="-mt-24 bg-opacity-40 z-10 inset-0 h-full w-full " >
                 <div className="flex items-center space-x-3 justify-self-center mt-8">
                     {/* <span className="pl-2 font-fixel  text-2xl font-semibold font-fixel leading-loose pt-2">Lumen</span> */}
-                    <Icons.thunderGradient className="text-white h-24 w-24" />
+                    {/* <Icons.thunderGradient className="text-white h-24 w-24" /> */}
+                <img src={lumenIcon} alt="Lumen" className="h-24 w-24" />
                 </div>
             </div>
         <CardHeader className="text-center">

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { storage } from '#imports';
+import { openLoginTabAndClosePopup } from '@/utils';
 
 // Safe storage access with fallbacks
 const getStorageItems = async (keys: string[]): Promise<Array<{ key: string; value: string }>> => {
@@ -224,9 +225,10 @@ async function handleUnauthorized() {
     // Clear auth data from extension storage
     await removeStorageItem('local:access-token');
     
-    // Redirect to login
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
+    // Open login in a new tab and close the popup
+    const isLoginRoute = location.hash === '#/login' || location.hash === '#login';
+    if (!isLoginRoute) {
+      openLoginTabAndClosePopup();
     }
   } catch (error) {
     console.error('Error handling unauthorized:', error);

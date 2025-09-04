@@ -8,7 +8,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   console.log('RequireAuth component rendered', { token, isLoading })
     useEffect(() => {
       if (!isLoading && !token) {
-        navigate('/') // Redirect to sign-in
+        navigate('/') // Redirect to sign-in inside popup
       }
     }, [isLoading, token])
   

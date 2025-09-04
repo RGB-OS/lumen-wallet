@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
+import lumenIcon from '@/assets/logo.png';
 export const Header: React.FC = () => {
     const { sync, isSyncing } = useSync();
     const { logout } = useLogout();
@@ -34,9 +34,11 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-4">
                 {/* <div className="h-8 w-8 bg-gradient-to-r from-bitcoin to-accent rounded-full flex items-center justify-center"> */}
                 {/* <Wallet className="h-5 w-5 text-bitcoin-foreground" /> */}
-                <Icons.thunderGradient className="text-white h-10 w-10" />
+                {/* <Icons.thunderGradient className="text-white h-10 w-10" /> */}
                 {/* </div> */}
+                <img src={lumenIcon} alt="Lumen" className=" h-10 w-10" />
                 <div className="text-lg font-bold">Lumen</div>
+
             </div>
             <div className="flex items-center space-x-4">
                 <Icons.refresh 

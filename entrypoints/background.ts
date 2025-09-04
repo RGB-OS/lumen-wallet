@@ -1,5 +1,6 @@
 import { nodeService } from "@/services/nodeService";
 import { walletService } from "@/services/walletService";
+import { authService } from "@/services/authService";
 import { WalletMethodNotFound } from "@/utils/wallet-errors";
 
 export default defineBackground(() => {

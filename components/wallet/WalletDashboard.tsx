@@ -12,7 +12,7 @@ import { useToastActions } from "@/hooks/useToastActions";
 
 import { formatAddress, satoshisToBTC } from "@/utils";
 import { BTCBalanceCard } from "./BTCBalanceCard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "./Header";
 import { 
   useAddress, 
@@ -118,14 +118,33 @@ export const WalletDashboard = () => {
         </div>
     );
 };
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Icons } from "@/components/icons";
+
 const TransactionButtons = () => {
+    const navigate = useNavigate();
     return <>
         <div className="flex flex-col items-center space-y-2">
-
-            <Link to="/wallet/receive"> <Button className="size-16 text-foreground bg-white rounded-2xl" variant="outline" >
-                <Icons.recive className="size-8" />
-            </Button>
-            </Link>
+            <Drawer>
+                <DrawerTrigger asChild>
+                    <Button className="size-16 text-foreground bg-white rounded-2xl" variant="outline" >
+                        <Icons.recive className="size-8" />
+                    </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle className="text-center text-lg">Select receive option</DrawerTitle>
+                    </DrawerHeader>
+                    <div className="p-4 grid gap-3">
+                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive')}>
+                            Receive RGB Asset
+                        </Button>
+                        <Button  className="w-full bg-white font-semibold" variant="outline" onClick={() => navigate('/wallet/receive-btc')}>
+                            Receive Bitcoin on-chain
+                        </Button>
+                    </div>
+                </DrawerContent>
+            </Drawer>
             <span>Recive</span>
         </div>
 
