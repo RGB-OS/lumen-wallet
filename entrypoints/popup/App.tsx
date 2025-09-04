@@ -21,6 +21,7 @@ import InvoiceGenerationConfirmation from '@/components/asset/InvoiceGenerationC
 import { QueryProvider } from '@/providers/queryProvider';
 import { ConfirmProvider } from '@/providers/confirmProvider';
 import { ToastProvider } from '@/providers/toastProvider';
+import { AutoRefreshProvider } from '@/providers/autoRefreshProvider';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { openLoginTabAndClosePopup } from '@/utils';
 import { authService } from '@/services/authService';
@@ -28,11 +29,13 @@ import { authService } from '@/services/authService';
 function App() {
   const [count, setCount] = useState(0);
   useEffect(() => {
-
-
-
-    // If popup opens on any route and user is unauthenticated, open full-page login
+    // Initialize defaults when popup opens (if missing), then check auth
     (async () => {
+      try {
+        await authService.initializeDefaults();
+      } catch {}
+      
+      // If popup opens on any route and user is unauthenticated, open full-page login
       try {
         const isLoginRoute = location.hash === '#/login' || location.hash === '#login';
         if (isLoginRoute) {
@@ -46,7 +49,6 @@ function App() {
         openLoginTabAndClosePopup();
       }
     })();
-
   }, []);
 
   return (
@@ -54,31 +56,31 @@ function App() {
       <QueryProvider>
         <ConfirmProvider>
           <ToastProvider>
-            <HashRouter>
-              <Routes>
-                
-                <Route path="/login" element={<ConnectNode />} />
-                <Route path="/approval" element={<Approval />} />
-                <Route path="/confirm-transaction" element={<TransactionConfirmation />} />
-                <Route path="/confirm-message-signing" element={<MessageSigningConfirmation />} />
-                <Route path="/confirm-invoice-generation" element={<InvoiceGenerationConfirmation />} />
-                <Route path="/" element={<ConnectNode />} />
-                <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
-                  <Route index element={<WalletDashboard />} />
-                  <Route path="recipient" element={<SendRecipient />} />
-                  <Route path="send" element={<SendAssetPage />} />
-                  <Route path="send-btc" element={<SendBTCPage />} />
-                  <Route path="send/:asset_id" element={<SendAssetPage />} />
-                  <Route path="asset/:asset_id" element={<AssetPage />} />
-                 
-                  <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
-                  <Route path="receive" element={<ReceiveAssetPage />} />
-                  <Route path="receive-btc" element={<ReceiveBTCPage />} />
-                  <Route path="utxos" element={<UTXOsPage />} />
-                </Route>
-                <Route path="*" element={<Navigate to="/" />} />
-                      </Routes>
-            </HashRouter>
+            <AutoRefreshProvider>
+              <HashRouter>
+                <Routes>
+                  <Route path="/login" element={<ConnectNode />} />
+                  <Route path="/approval" element={<Approval />} />
+                  <Route path="/confirm-transaction" element={<TransactionConfirmation />} />
+                  <Route path="/confirm-message-signing" element={<MessageSigningConfirmation />} />
+                  <Route path="/confirm-invoice-generation" element={<InvoiceGenerationConfirmation />} />
+                  <Route path="/" element={<ConnectNode />} />
+                  <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
+                    <Route index element={<WalletDashboard />} />
+                    <Route path="recipient" element={<SendRecipient />} /> {/* New route for recipient input */}
+                    <Route path="send" element={<SendAssetPage />} /> {/* Generic send page for RGB */}
+                    <Route path="send/:asset_id" element={<SendAssetPage />} /> {/* Specific asset send page */}
+                    <Route path="send-btc" element={<SendBTCPage />} /> {/* New route for BTC send */}
+                    <Route path="asset/:asset_id" element={<AssetPage />} />
+                    <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
+                    <Route path="receive" element={<ReceiveAssetPage />} />
+                    <Route path="receive-btc" element={<ReceiveBTCPage />} /> {/* New route for BTC receive */}
+                    <Route path="utxos" element={<UTXOsPage />} />
+                  </Route>
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </HashRouter>
+            </AutoRefreshProvider>
           </ToastProvider>
         </ConfirmProvider>
       </QueryProvider>

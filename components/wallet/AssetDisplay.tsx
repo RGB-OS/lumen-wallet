@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, TrendingDown, Bitcoin } from "lucide-react";
 import { satoshisToBTC } from "@/utils";
 import { Asset } from "@/types/rgb-types";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useBTCBalance, useListAssets } from "@/hooks/useWalletQueries";
 
 
@@ -31,6 +31,7 @@ const upsertAssets = (prev: Asset[], incoming: Asset[]): Asset[] => {
 };
 
 export const AssetDisplay = () => {
+  const navigate = useNavigate();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [totalValue, setTotalValue] = useState("0.00");
   const [btcPrice] = useState(50200); // Mock BTC price for calculation
@@ -99,6 +100,16 @@ export const AssetDisplay = () => {
 
   },[ assetsData]);
 
+  const handleAssetClick = (asset: Asset) => {
+    if (asset.symbol === "BTC") {
+      // Navigate to send Bitcoin page for BTC asset
+      navigate('/wallet/send-btc');
+    } else {
+      // Navigate to asset page for other assets
+      navigate(`/wallet/asset/${asset.asset_id}`);
+    }
+  };
+
   
   return (
     <div className="space-y-6 py-1">
@@ -123,7 +134,11 @@ export const AssetDisplay = () => {
       ) : (
         <div className="space-y-1 px-1">
           {assets.map((asset) => (
-            <Link to={`/wallet/asset/${asset.asset_id}`} key={asset.symbol} className=" bg-card flex items-center justify-between p-4 border border-border rounded-lg hover:border-foreground/20  transition-colors cursor-ponter">
+            <div 
+              key={asset.symbol} 
+              className="bg-card flex items-center justify-between p-4 border border-border rounded-lg hover:border-foreground/20 transition-colors cursor-pointer"
+              onClick={() => handleAssetClick(asset)}
+            >
               <div className="flex items-center space-x-4">
                 <div className="h-10 w-10 bg-gradient-to-r from-[#EDEDE9] to-accent rounded-full flex items-center justify-center text-lg text-foreground uppercase">
                   {asset.symbol.charAt(0)}
@@ -135,7 +150,6 @@ export const AssetDisplay = () => {
               </div>
 
               <div className="text-right">
-              
                 <div className="">
                   <p className="text-sm text-gray-dark">{asset.value}</p>
                   {/* <Badge variant={asset.change24h >= 0 ? "default" : "destructive"} className="text-xs">
@@ -149,7 +163,7 @@ export const AssetDisplay = () => {
                 </div>
                 <p className="font-medium text-foreground">{asset.balance} {asset.symbol}</p>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

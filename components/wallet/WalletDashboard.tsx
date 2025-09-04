@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, TrendingUp, TrendingDown, Bitcoin, Send, Download, Coins, User } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Bitcoin, Send, Download, Coins, User, CheckCircle } from "lucide-react";
 
 // import { SignatureAuth } from "./SignatureAuth";
 import { Wallet, FileText, Settings, Copy, Eye } from "lucide-react";
@@ -36,6 +36,8 @@ export const WalletDashboard = () => {
     const [totalValue, setTotalValue] = useState("0.00");
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [showTransactionSuccess, setShowTransactionSuccess] = useState(false);
+    const [transactionInfo, setTransactionInfo] = useState<any>(null);
 
     const { showCopiedToClipboard, showError } = useToastActions();
     
@@ -58,6 +60,20 @@ export const WalletDashboard = () => {
       error: transactionsError
     } = useListTransactions();
 
+    // Check for transaction info from navigation state
+    useEffect(() => {
+      const location = window.location;
+      const searchParams = new URLSearchParams(location.search);
+      const state = history.state;
+      
+      if (state?.showTransaction && state?.transaction) {
+        setTransactionInfo(state.transaction);
+        setShowTransactionSuccess(true);
+        // Clear the state
+        history.replaceState({}, '', location.pathname);
+      }
+    }, []);
+
     const copyToClipboard = async (text: string, label: string) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -77,9 +93,47 @@ export const WalletDashboard = () => {
       setSelectedTransaction(null);
     };
 
+    const handleCloseTransactionSuccess = () => {
+      setShowTransactionSuccess(false);
+      setTransactionInfo(null);
+    };
+
     return (
         <div className="min-h-screen w-full  ">
             <Header />
+            
+            {/* Transaction Success Banner */}
+            {showTransactionSuccess && transactionInfo && (
+              <div className="bg-green-50 border border-green-200 rounded-lg mx-4 mt-4 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <div>
+                      <h3 className="text-sm font-medium text-green-800">
+                        {transactionInfo.type === 'BTC_Send' ? 'Bitcoin Sent Successfully!' : 'Transaction Successful!'}
+                      </h3>
+                      <p className="text-sm text-green-600">
+                        TX ID: {transactionInfo.txid}
+                      </p>
+                      {transactionInfo.amount && (
+                        <p className="text-sm text-green-600">
+                          Amount: {transactionInfo.amount} sats
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleCloseTransactionSuccess}
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    ×
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Card className="py-4">
 
                 <CardContent>
