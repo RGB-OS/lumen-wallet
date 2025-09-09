@@ -6,6 +6,7 @@ import { WalletMethodNotFound } from "@/utils/wallet-errors";
 export default defineBackground(() => {
   // Handle WebLN requests
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    console.log("defineBackground: ",msg)
     if (msg.webln) {
       (async () => {
         const origin = sender.origin || new URL(sender.url || '').origin;
@@ -13,6 +14,7 @@ export default defineBackground(() => {
           switch (msg.webln.method) {
             case 'enable':
               const res = await walletService.enable(origin);
+              console.log("enabele reeeesss")
               return sendResponse({ result: res });
             case 'isEnabled':
               const enabled = await walletService.isEnabled(origin);

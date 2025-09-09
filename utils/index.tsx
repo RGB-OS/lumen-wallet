@@ -29,13 +29,14 @@ export function openLoginTabAndClosePopup(): void {
         const anyWindow = window as unknown as { chrome?: any } & Window;
         const runtime = anyWindow.chrome?.runtime;
         const tabs = anyWindow.chrome?.tabs;
-        const extensionUrl = runtime?.getURL ? runtime.getURL(`popup.html${loginHash}`) : undefined;
+        // Add a parameter to prevent recursive calls
+        const extensionUrl = runtime?.getURL ? runtime.getURL(`popup.html${loginHash}?from=tab`) : undefined;
 
         if (tabs && extensionUrl) {
             tabs.create({ url: extensionUrl });
         } else {
-            const targetUrl = extensionUrl || `${location.origin}/popup.html${loginHash}`;
-            window.open(targetUrl, '_blank');
+            // const targetUrl = extensionUrl || `${location.origin}/popup.html${loginHash}?from=tab`;
+            // window.open(targetUrl, '_blank');
         }
     } catch (e) {
         // Fallback: try to navigate current window

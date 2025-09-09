@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import reactLogo from '@/assets/react.svg';
 import wxtLogo from '/wxt.svg';
 import './App.css';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { WalletDashboard } from '@/components/wallet/WalletDashboard';
 import { ConnectNode } from '@/components/wallet/ConnetNode';
 import { RequireAuth } from '@/components/common/RequireAuth';
@@ -26,31 +26,66 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { openLoginTabAndClosePopup } from '@/utils';
 import { authService } from '@/services/authService';
 
-function App() {
-  const [count, setCount] = useState(0);
+function AppWrapper() {
+  const location = useLocation();
+  
   useEffect(() => {
-    // Initialize defaults when popup opens (if missing), then check auth
     (async () => {
       try {
-        await authService.initializeDefaults();
-      } catch {}
-      
-      // If popup opens on any route and user is unauthenticated, open full-page login
-      try {
+        const fromTab = new URLSearchParams(location.search).get('from');
+        if (fromTab === 'external' || fromTab=='tab') {
+          return;
+        }
+        
         const isLoginRoute = location.hash === '#/login' || location.hash === '#login';
         if (isLoginRoute) {
-          return; // already on login, don't open a new tab
+          console.log('Already on login route, no redirect needed');
+          return;
         }
+        const isApprovalRoute = location.hash.includes('#/approval') || 
+                               location.hash.includes('#/confirm-transaction') ||
+                               location.hash.includes('#/confirm-message-signing') ||
+                               location.hash.includes('#/confirm-invoice-generation');
+        if (isApprovalRoute) {
+          return;
+        }
+      
         const authenticated = await authService.isAuthenticated();
         if (!authenticated) {
           openLoginTabAndClosePopup();
         }
-      } catch {
+      } catch (error) {
         openLoginTabAndClosePopup();
       }
     })();
-  }, []);
+  }, [location]);
 
+  return (
+    <Routes>
+      <Route path="/login" element={<ConnectNode />} />
+      <Route path="/approval" element={<Approval />} />
+      <Route path="/confirm-transaction" element={<TransactionConfirmation />} />
+      <Route path="/confirm-message-signing" element={<MessageSigningConfirmation />} />
+      <Route path="/confirm-invoice-generation" element={<InvoiceGenerationConfirmation />} />
+      <Route path="/" element={<ConnectNode />} />
+      <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
+        <Route index element={<WalletDashboard />} />
+        <Route path="recipient" element={<SendRecipient />} /> {/* New route for recipient input */}
+        <Route path="send" element={<SendAssetPage />} /> {/* Generic send page for RGB */}
+        <Route path="send/:asset_id" element={<SendAssetPage />} /> {/* Specific asset send page */}
+        <Route path="send-btc" element={<SendBTCPage />} /> {/* New route for BTC send */}
+        <Route path="asset/:asset_id" element={<AssetPage />} />
+        <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
+        <Route path="receive" element={<ReceiveAssetPage />} />
+        <Route path="receive-btc" element={<ReceiveBTCPage />} /> {/* New route for BTC receive */}
+        <Route path="utxos" element={<UTXOsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+}
+
+function App() {
   return (
     <ErrorBoundary>
       <QueryProvider>
@@ -58,27 +93,7 @@ function App() {
           <ToastProvider>
             <AutoRefreshProvider>
               <HashRouter>
-                <Routes>
-                  <Route path="/login" element={<ConnectNode />} />
-                  <Route path="/approval" element={<Approval />} />
-                  <Route path="/confirm-transaction" element={<TransactionConfirmation />} />
-                  <Route path="/confirm-message-signing" element={<MessageSigningConfirmation />} />
-                  <Route path="/confirm-invoice-generation" element={<InvoiceGenerationConfirmation />} />
-                  <Route path="/" element={<ConnectNode />} />
-                  <Route path="/wallet" element={<RequireAuth><WalletLayout /></RequireAuth>} >
-                    <Route index element={<WalletDashboard />} />
-                    <Route path="recipient" element={<SendRecipient />} /> {/* New route for recipient input */}
-                    <Route path="send" element={<SendAssetPage />} /> {/* Generic send page for RGB */}
-                    <Route path="send/:asset_id" element={<SendAssetPage />} /> {/* Specific asset send page */}
-                    <Route path="send-btc" element={<SendBTCPage />} /> {/* New route for BTC send */}
-                    <Route path="asset/:asset_id" element={<AssetPage />} />
-                    <Route path="receive/:asset_id" element={<ReceiveAssetPage />} />
-                    <Route path="receive" element={<ReceiveAssetPage />} />
-                    <Route path="receive-btc" element={<ReceiveBTCPage />} /> {/* New route for BTC receive */}
-                    <Route path="utxos" element={<UTXOsPage />} />
-                  </Route>
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
+                <AppWrapper />
               </HashRouter>
             </AutoRefreshProvider>
           </ToastProvider>

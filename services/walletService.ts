@@ -31,17 +31,16 @@ class WalletService {
      * @throws Error if the user denies access
      */
     async enable(origin: string) {
-        console.log('Enabling WebLN for origin:', origin);
-        console.log('Enabled origins:', this.enabledOrigins);
+        const authorized = await authService.isAuthenticated();
+        if (!authorized) {
+            console.warn('User is not authenticated, opening login popup');
+            await this.openLoginPopup();
+        }
+
         if (this.enabledOrigins.has(origin)) {
-            const authorized = await authService.isAuthenticated();
-            if (!authorized) {
-                console.warn('User is not authenticated, opening login popup');
-                await this.openLoginPopup();
-            }
             return
         }
-        console.log('Requesting user approval for origin:', origin, `/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
+        // console.log('Requesting user approval for origin:', origin, `/popup.html#/approval?origin=${encodeURIComponent(origin)}&from=external`);
         const url = browser.runtime.getURL(`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
 
         const popup = await browser.windows.create({
@@ -67,11 +66,6 @@ class WalletService {
             throw new WalletPermissionError(origin);
         }
         this.enabledOrigins.add(origin);
-        const authorized = await authService.isAuthenticated();
-        if (!authorized) {
-            console.warn('User is not authenticated, opening login popup');
-            await this.openLoginPopup();
-        }
         return
     }
     /**
