@@ -87,7 +87,7 @@ export default function Approval() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         {/* Website Info Card */}
         <div className="bg-card border border-border rounded-lg p-6 w-full max-w-sm mb-6">
-          <div className="flex items-center">
+          <div className="flex items-center mb-4">
             {websiteInfo?.favicon && (
               <img 
                 src={websiteInfo.favicon} 
