@@ -103,7 +103,7 @@ class WalletService {
                     alias: 'ThunderStack',
                     pubkey: data.pubkey,
                 },
-                methods: ['makeInvoice', 'sendPayment', 'keysend', 'getInfo', 'request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
+                methods: ['request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
             }
         } catch (e: any) {
             console.error('Failed to get node info:', e);
