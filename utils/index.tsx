@@ -47,9 +47,19 @@ export function openLoginTabAndClosePopup(): void {
         }
     } finally {
         try {
-            window.close();
+            closeWindow()
         } catch {
             // ignore
         }
     }
+}
+
+export const closeWindow=()=>{
+    setTimeout(() => {
+        if (typeof window !== 'undefined' && window.close) {
+          window.close();
+        } else {
+          console.warn('Window close not available');
+        }
+      }, 2000);
 }

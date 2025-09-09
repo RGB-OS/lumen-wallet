@@ -8,6 +8,7 @@ import { Icons } from '@/components/icons';
 import { SendRGBAsset } from '@/types/rgb-types';
 import { nodeService } from '@/services/nodeService';
 import { useToastActions } from '@/hooks/useToastActions';
+import { closeWindow } from '@/utils';
 
 interface TransactionConfirmationProps {
   transactionData?: SendRGBAsset;
@@ -119,9 +120,7 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
       showTransferSuccess('Transaction sent successfully');
       
       // Close popup after a short delay
-      setTimeout(() => {
-        window.close();
-      }, 1500);
+      closeWindow()
       
     } catch (error: any) {
       console.error('Transaction failed:', error);
@@ -150,9 +149,7 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
     showTransferError('Transaction rejected by user');
     
     // Close popup after a short delay
-    setTimeout(() => {
-      window.close();
-    }, 1500);
+    closeWindow()
   };
 
   if (!txData) {

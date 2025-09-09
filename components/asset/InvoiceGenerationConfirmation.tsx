@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { useToastActions } from '@/hooks/useToastActions';
 import { nodeService } from '@/services/nodeService';
+import { closeWindow } from '@/utils';
 
 interface InvoiceGenerationConfirmationProps {
   invoiceData?: {
@@ -130,13 +131,7 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
       showTransferSuccess('Invoice generated successfully');
       
       // Close popup after a short delay
-      setTimeout(() => {
-        if (typeof window !== 'undefined' && window.close) {
-          window.close();
-        } else {
-          console.warn('Window close not available');
-        }
-      }, 1500);
+      closeWindow()
       
     } catch (error: any) {
       console.error('Invoice generation failed:', error);
@@ -173,9 +168,7 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
     showTransferError('Invoice generation cancelled');
     
     // Close popup after a short delay
-    setTimeout(() => {
-      window.close();
-    }, 1500);
+    closeWindow()
   };
 
   if (!invData) {
@@ -187,11 +180,7 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
           The invoice generation data is missing or invalid.
         </p>
         <Button onClick={() => {
-          if (typeof window !== 'undefined' && window.close) {
-            window.close();
-          } else {
-            console.warn('Window close not available');
-          }
+          closeWindow()
         }}>
           Close
         </Button>

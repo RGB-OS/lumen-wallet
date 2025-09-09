@@ -12,6 +12,7 @@ import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 // import { useToast } from "@/hooks/use-toast";
 import lumenIcon from '@/assets/logo.png';
+import { closeWindow } from "@/utils";
 
 const connectNodeSchema = z.object({
   nodeEndpoint: z.string().min(1, "Node endpoint is required"),
@@ -81,7 +82,7 @@ export const ConnectNode = () => {
           type: 'wallet-auth-response',
           success: true,
         });
-        window.close();
+        closeWindow()
       } else {
         console.log('This popup was opened by within EXTENSION');
         navigate('/wallet')

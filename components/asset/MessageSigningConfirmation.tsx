@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { useToastActions } from '@/hooks/useToastActions';
 import { nodeService } from '@/services/nodeService';
+import { closeWindow } from '@/utils';
 
 interface MessageSigningConfirmationProps {
   messageData?: { message: string };
@@ -50,9 +51,7 @@ export const MessageSigningConfirmation: React.FC<MessageSigningConfirmationProp
       showTransferSuccess('Message signed successfully');
       
       // Close popup after a short delay
-      setTimeout(() => {
-        window.close();
-      }, 1500);
+      closeWindow()
       
     } catch (error: any) {
       console.error('Message signing failed:', error);
@@ -81,9 +80,7 @@ export const MessageSigningConfirmation: React.FC<MessageSigningConfirmationProp
     showTransferError('Message signing cancelled');
     
     // Close popup after a short delay
-    setTimeout(() => {
-      window.close();
-    }, 1500);
+    closeWindow()
   };
 
   if (!msgData) {
@@ -154,11 +151,21 @@ export const MessageSigningConfirmation: React.FC<MessageSigningConfirmationProp
         </Card>
 
         {/* Action Buttons */}
-        <div className="space-y-3">
+        <div className="flex space-x-3 w-full ">
+        <Button 
+            onClick={handleCancel}
+            variant="outline"
+            disabled={isLoading}
+            className="bg-white flex-1"
+             size="lg"
+          >
+            <Icons.x className="mr-2 h-4 w-4 " />
+            Cancel
+          </Button>
           <Button 
             onClick={handleSign}
             disabled={isLoading}
-            className="w-full"
+            className="flex-1 "
             size="lg"
           >
             {isLoading ? (
@@ -174,15 +181,7 @@ export const MessageSigningConfirmation: React.FC<MessageSigningConfirmationProp
             )}
           </Button>
           
-          <Button 
-            onClick={handleCancel}
-            variant="outline"
-            disabled={isLoading}
-            className="w-full"
-          >
-            <Icons.x className="mr-2 h-4 w-4 bg-white" />
-            Cancel
-          </Button>
+       
         </div>
 
         {/* Security Note */}

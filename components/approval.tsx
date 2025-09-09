@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Icons } from './icons';
 import { Button } from './ui/button';
+import { closeWindow } from '@/utils';
 
 interface WebsiteInfo {
   domain: string;
@@ -57,12 +58,12 @@ export default function Approval() {
 
   const handleApprove = () => {
     browser.runtime.sendMessage({ type: 'webln-approval-response', approved: true });
-    window.close();
+    closeWindow()
   };
 
   const handleDeny = () => {
     browser.runtime.sendMessage({ type: 'webln-approval-response', approved: false });
-    window.close();
+    closeWindow()
   };
 
   if (loading) {
