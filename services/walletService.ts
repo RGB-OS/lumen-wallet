@@ -17,13 +17,128 @@ type BalanceResponse = {
     currency?: "sats" | "EUR" | "USD"
 }
 
+interface ConnectedSite {
+    origin: string;
+    domain: string;
+    connectedAt: number;
+    lastUsed: number;
+    permissions: string[];
+    favicon?: string;
+    isEnabled: boolean;
+}
+
 class WalletService {
     private enabledOrigins = new Set<string>();
+    private connectedSites: Map<string, ConnectedSite> = new Map();
+    private storageKey = 'lumen-connected-sites';
     /**
      * Trusted origin for WebLN access
      * This is used to identify the origin that is allowed to access WebLN methods
      */
     private trustedOrigin = 'internal';
+
+    constructor() {
+        this.loadConnectedSites();
+    }
+
+    /**
+     * Load connected sites from browser storage
+     */
+    private async loadConnectedSites(): Promise<void> {
+        try {
+            const result = await browser.storage.local.get(this.storageKey);
+            const sites = result[this.storageKey] || {};
+            
+            this.connectedSites.clear();
+            this.enabledOrigins.clear();
+            
+            for (const [origin, siteData] of Object.entries(sites)) {
+                const site = siteData as ConnectedSite;
+                this.connectedSites.set(origin, site);
+                if (site.isEnabled) {
+                    this.enabledOrigins.add(origin);
+                }
+            }
+            console.log('Loaded connected sites:', this.connectedSites.size);
+        } catch (error) {
+            console.error('Failed to load connected sites:', error);
+        }
+    }
+
+    /**
+     * Save connected sites to browser storage
+     */
+    private async saveConnectedSites(): Promise<void> {
+        try {
+            const sites: Record<string, ConnectedSite> = {};
+            for (const [origin, site] of this.connectedSites.entries()) {
+                sites[origin] = site;
+            }
+            await browser.storage.local.set({ [this.storageKey]: sites });
+        } catch (error) {
+            console.error('Failed to save connected sites:', error);
+        }
+    }
+
+    /**
+     * Add a new connected site
+     */
+    private async addConnectedSite(origin: string): Promise<void> {
+        try {
+            const url = new URL(origin);
+            const domain = url.hostname;
+            
+            const site: ConnectedSite = {
+                origin,
+                domain,
+                connectedAt: Date.now(),
+                lastUsed: Date.now(),
+                permissions: ['balance', 'transactions', 'assets'],
+                favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                isEnabled: true
+            };
+            
+            this.connectedSites.set(origin, site);
+            this.enabledOrigins.add(origin);
+            await this.saveConnectedSites();
+            console.log('Added connected site:', origin);
+        } catch (error) {
+            console.error('Failed to add connected site:', error);
+        }
+    }
+
+    /**
+     * Remove a connected site
+     */
+    async removeConnectedSite(origin: string): Promise<void> {
+        try {
+            this.connectedSites.delete(origin);
+            this.enabledOrigins.delete(origin);
+            await this.saveConnectedSites();
+            console.log('Removed connected site:', origin);
+        } catch (error) {
+            console.error('Failed to remove connected site:', error);
+        }
+    }
+
+    /**
+     * Get all connected sites
+     */
+    getConnectedSites(): ConnectedSite[] {
+        return Array.from(this.connectedSites.values());
+    }
+
+    /**
+     * Update last used timestamp for a site
+     */
+    private async updateLastUsed(origin: string): Promise<void> {
+        const site = this.connectedSites.get(origin);
+        if (site) {
+            site.lastUsed = Date.now();
+            await this.saveConnectedSites();
+        }
+    }
+
     /**
      * Enable WebLN access for a specific origin
      * @param origin The origin to enable
@@ -37,10 +152,14 @@ class WalletService {
             await this.openLoginPopup();
         }
 
+        // Check if already enabled
         if (this.enabledOrigins.has(origin)) {
-            return
+            // Update last used timestamp
+            await this.updateLastUsed(origin);
+            return;
         }
-        // console.log('Requesting user approval for origin:', origin, `/popup.html#/approval?origin=${encodeURIComponent(origin)}&from=external`);
+
+        // Request user approval
         const url = browser.runtime.getURL(`/popup.html#/approval?origin=${encodeURIComponent(origin)}`);
 
         const popup = await browser.windows.create({
@@ -62,11 +181,14 @@ class WalletService {
             browser.runtime.onMessage.addListener(handler);
             console.log('Waiting for user approval...');
         });
+
         if (!approved) {
             throw new WalletPermissionError(origin);
         }
-        this.enabledOrigins.add(origin);
-        return
+
+        // Add to connected sites and save to storage
+        await this.addConnectedSite(origin);
+        return;
     }
     /**
      * Check if the origin is enabled for WebLN access
@@ -75,9 +197,10 @@ class WalletService {
      */
     async isEnabled(origin: string) {
         if (!this.enabledOrigins.has(origin)) {
-            // throw new Error('webln.enable() not called for this origin');
             return false;
         }
+        // Update last used timestamp
+        await this.updateLastUsed(origin);
         return true;
     }
 
@@ -94,6 +217,9 @@ class WalletService {
         }
         const session = await authService.isAuthenticated();
         if (!session) throw new WalletPermissionError('User not authenticated');
+
+        // Update last used timestamp
+        await this.updateLastUsed(origin);
 
         try {
             const data = await nodeService.nodeinfo();
@@ -117,6 +243,10 @@ class WalletService {
         }
         const session = await authService.isAuthenticated();
         if (!session) throw new WalletPermissionError('User not authenticated');
+        
+        // Update last used timestamp
+        await this.updateLastUsed(origin);
+        
         try {
             const res = await nodeService.btcbalance();
             return {
@@ -134,6 +264,10 @@ class WalletService {
         }
         const session = await authService.isAuthenticated();
         if (!session) throw new WalletPermissionError('User not authenticated');
+        
+        // Update last used timestamp
+        await this.updateLastUsed(origin);
+        
         console.log(`[walletService] Handling request: ${method}`, params);
         try {
             switch (method) {
