@@ -138,7 +138,7 @@ export const AssetDisplay = () => {
 
               <div className="text-right">
                 <div className="">
-                  <p className="text-sm text-gray-dark">{asset.value}</p>
+                  {/* <p className="text-sm text-gray-dark">{asset.value}</p> */}
                   {/* <Badge variant={asset.change24h >= 0 ? "default" : "destructive"} className="text-xs">
                         {asset.change24h >= 0 ? (
                           <TrendingUp className="h-3 w-3 mr-1" />

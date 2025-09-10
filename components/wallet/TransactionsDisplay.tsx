@@ -3,7 +3,10 @@ import { RefreshCw, TrendingUp, TrendingDown, Bitcoin, Send, Download, Coins, Us
 import { twMerge } from "tailwind-merge";
 import { formatAddress } from "@/utils";
 import { Card, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
+import { Icons } from "../icons";
 import { TxSkeleton } from "./TxSkeleton";
+import { useToastActions } from "@/hooks/useToastActions";
 
 export const TransactionsDisplay = ({ 
     transactions, 
@@ -16,6 +19,16 @@ export const TransactionsDisplay = ({
     error: any;
     onTransactionClick: (transaction: any) => void;
   }) => {
+    const { showCopiedToClipboard, showError } = useToastActions();
+
+    const copyToClipboard = async (text: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopiedToClipboard(label);
+      } catch (err) {
+        showError("Copy Failed", "Failed to copy to clipboard");
+      }
+    };
     const getTransactionIcon = (type: string) => {
       switch (type) {
         case 'RgbSend':
@@ -87,8 +100,10 @@ export const TransactionsDisplay = ({
                   )}
                 </div>
                 
-                <div className="text-xs mt-1 font-mono truncate text-gray-dark">
-                  tx: {formatAddress(tx.txid)}
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-xs font-mono truncate text-gray-dark flex-1">
+                    tx: {formatAddress(tx.txid)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -105,6 +120,16 @@ export const TransactionsDisplay = ({
     transaction: any; 
     onClose: () => void; 
   }) => {
+    const { showCopiedToClipboard, showError } = useToastActions();
+
+    const copyToClipboard = async (text: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopiedToClipboard(label);
+      } catch (err) {
+        showError("Copy Failed", "Failed to copy to clipboard");
+      }
+    };
     const getTransactionIcon = (type: string) => {
       switch (type) {
         case 'RgbSend':
@@ -164,9 +189,19 @@ export const TransactionsDisplay = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-dark uppercase tracking-wide">Transaction ID</label>
-                  <p className="text-sm font-mono break-all mt-1">
-                    {transaction.txid}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm font-mono break-all flex-1">
+                      {transaction.txid}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(transaction.txid, 'Transaction ID')}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <Icons.copy className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
                 {transaction.confirmation_time?.height && (
                   <div>

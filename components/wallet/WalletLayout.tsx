@@ -3,6 +3,7 @@ import { PropsWithChildren } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Icons } from "../icons";
+import { AppDropdownMenu } from "../common/AppDropdownMenu";
 
 const TITLE_MAP: { pattern: RegExp; title: string }[] = [
   { pattern: /^\/wallet$/, title: 'Wallet Overview' },
@@ -36,7 +37,9 @@ export const WalletLayout: React.FC<PropsWithChildren> = ({ children }) => {
 
        
         <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-    <Icons.ellipsis className="size-6 text-gray-dark" />
+        <AppDropdownMenu
+          trigger={<Icons.ellipsis className="size-6 text-gray-dark cursor-pointer opacity-60 hover:opacity-100" />}
+        />
       </div>
     )}
     <div className="flex-1 relative">

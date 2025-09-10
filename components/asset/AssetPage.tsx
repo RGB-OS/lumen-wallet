@@ -16,6 +16,7 @@ import { TransferDetails } from './TransferDetails';
 import { formatAddress } from '@/utils';
 import { Icons } from '@/components/icons';
 import { useDrawer } from '@/hooks/useDrawer';
+import { useToastActions } from '@/hooks/useToastActions';
 import { 
   useListAssets, 
   useListTransfers, 
@@ -47,6 +48,7 @@ export const AssetPage = () => {
   const { asset_id } = useParams();
   const [selectedTransaction, setSelectedTransaction] = useState<RgbTransfer | null>(null);
   const { open, setOpen } = useDrawer();
+  const { showCopiedToClipboard, showError } = useToastActions();
 
   // React Query hooks
   const { 
@@ -90,6 +92,15 @@ export const AssetPage = () => {
   const handleRefreshTransfers = async () => {
     console.log('Refreshing transfers for asset_id:', asset_id);
     await refreshTransfersMutation.mutateAsync({ skip_sync: false });
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showCopiedToClipboard(label);
+    } catch (err) {
+      showError("Copy Failed", "Failed to copy to clipboard");
+    }
   };
 
   if (assetsLoading) {
@@ -198,8 +209,10 @@ export const AssetPage = () => {
                         <Icons.refresh className="h-3 w-3 text-orange-500" />
                       )}
                     </div>
-                    <div className="text-xs mt-1 font-mono truncate text-gray-dark">
-                      tx: {tx.txid ? formatAddress(tx.txid) : '—'}
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-xs font-mono truncate text-gray-dark flex-1">
+                        tx: {tx.txid ? formatAddress(tx.txid) : '—'}
+                      </span>
                     </div>
                   </div>
 

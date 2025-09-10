@@ -43,7 +43,7 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
   onClose,
   onTransactionUpdate,
 }) => {
-  const { showTransferSuccess, showTransferError } = useToastActions();
+  const { showTransferSuccess, showTransferError, showCopiedToClipboard, showError } = useToastActions();
   const { confirmCancel } = useConfirmActions();
   const failTransferMutation = useFailTransfer();
   const Icon = TransferKind[transaction.kind] ? TransferKind[transaction.kind] : null;
@@ -58,6 +58,15 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleString();
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showCopiedToClipboard(label);
+    } catch (err) {
+      showError("Copy Failed", "Failed to copy to clipboard");
+    }
   };
 
   const handleCancelTransfer = async () => {
@@ -108,9 +117,21 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Transaction ID</label>
-                <p className="text-sm font-mono break-all mt-1">
-                  {transaction.txid ? formatAddress(transaction.txid) : '—'}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-mono break-all flex-1">
+                    {transaction.txid ? formatAddress(transaction.txid) : '—'}
+                  </p>
+                  {transaction.txid && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(transaction.txid, 'Transaction ID')}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <Icons.copy className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Index</label>
@@ -130,9 +151,21 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
               </div>
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Recipient ID</label>
-                <p className="text-sm font-mono break-all mt-1">
-                  {transaction.recipient_id ? formatAddress(transaction.recipient_id) : '—'}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-mono break-all flex-1">
+                    {transaction.recipient_id ? formatAddress(transaction.recipient_id) : '—'}
+                  </p>
+                  {transaction.recipient_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(transaction.recipient_id, 'Recipient ID')}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <Icons.copy className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -168,16 +201,38 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Receive UTXO</label>
-                <p className="text-sm font-mono break-all mt-1">
-                  {transaction.receive_utxo ? formatAddress(transaction.receive_utxo) : '—'}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-mono break-all flex-1">
+                    {transaction.receive_utxo ? formatAddress(transaction.receive_utxo) : '—'}
+                  </p>
+                  {transaction.receive_utxo && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(transaction.receive_utxo, 'Receive UTXO')}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <Icons.copy className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
               {transaction.change_utxo && (
                 <div>
                   <label className="text-xs text-gray-dark uppercase tracking-wide">Change UTXO</label>
-                  <p className="text-sm font-mono break-all mt-1">
-                    {formatAddress(transaction.change_utxo)}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm font-mono break-all flex-1">
+                      {formatAddress(transaction.change_utxo)}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(transaction.change_utxo!, 'Change UTXO')}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <Icons.copy className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Plus } from 'lucide-react';
 import { Unspent } from '@/types/rgb-types';
 import { useToast } from '@/hooks/useToast';
+import { useToastActions } from '@/hooks/useToastActions';
 import { formatAddress } from '@/utils';
+import { Icons } from '@/components/icons';
 import {
   Drawer,
   DrawerContent,
@@ -24,6 +26,16 @@ export const UTXOsPageRefactored = () => {
   const [activeTab, setActiveTab] = useState('occupied');
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const { toast } = useToast();
+  const { showCopiedToClipboard, showError } = useToastActions();
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showCopiedToClipboard(label);
+    } catch (err) {
+      showError("Copy Failed", "Failed to copy to clipboard");
+    }
+  };
 
   // React Query hooks
   const {
@@ -152,19 +164,19 @@ export const UTXOsPageRefactored = () => {
         </TabsList>
 
         {/* <TabsContent value="all" className="space-y-4">
-          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
+          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} copyToClipboard={copyToClipboard} />
         </TabsContent> */}
 
         <TabsContent value="occupied" className="space-y-4">
-          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
+          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} copyToClipboard={copyToClipboard} />
         </TabsContent>
 
         <TabsContent value="unoccupied" className="space-y-4">
-          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
+          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} copyToClipboard={copyToClipboard} />
         </TabsContent>
 
         <TabsContent value="unlockable" className="space-y-4">
-          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} />
+          <UTXOList unspents={filteredUnspents} formatBTCAmount={formatBTCAmount} copyToClipboard={copyToClipboard} />
         </TabsContent>
       </Tabs>
 
@@ -184,9 +196,10 @@ export const UTXOsPageRefactored = () => {
 interface UTXOListProps {
   unspents: Unspent[];
   formatBTCAmount: (satoshi: number) => string;
+  copyToClipboard: (text: string, label: string) => void;
 }
 
-const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
+const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount, copyToClipboard }) => {
   if (unspents.length === 0) {
     return (
       <div className="text-center py-8">
@@ -204,9 +217,19 @@ const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
               <div className="flex-1">
                 <div className='text-left'>
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="font-mono text-sm text-foreground">
-                      {formatAddress(unspent.utxo.outpoint)}
-                    </h3>
+                    <div className="flex items-center gap-1 flex-1">
+                      <h3 className="font-mono text-sm text-foreground">
+                        {formatAddress(unspent.utxo.outpoint)}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(unspent.utxo.outpoint, 'UTXO Outpoint')}
+                        className="h-4 w-4 p-0 hover:bg-muted"
+                      >
+                        <Icons.copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                     <Badge variant={unspent.utxo.colorable ? "default" : "secondary"}>
                       {unspent.utxo.colorable ? "Colorable" : "Non-colorable"}
                     </Badge>
@@ -224,9 +247,19 @@ const UTXOList: React.FC<UTXOListProps> = ({ unspents, formatBTCAmount }) => {
                     {unspent.rgb_allocations.map((allocation, allocIndex) => (
                       <div key={allocIndex} className="text-xs bg-muted p-2 rounded">
                         <div className="flex space-x-2 items-center">
-                          <span className="font-mono">
-                            {formatAddress(allocation.asset_id)}
-                          </span>
+                          <div className="flex items-center gap-1 flex-1">
+                            <span className="font-mono">
+                              {formatAddress(allocation.asset_id)}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(allocation.asset_id, 'Asset ID')}
+                              className="h-4 w-4 p-0 hover:bg-muted"
+                            >
+                              <Icons.copy className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <Badge variant={allocation.settled ? "default" : "secondary"}>
                             {allocation.settled ? "Settled" : "Unsettled"}
                           </Badge>
