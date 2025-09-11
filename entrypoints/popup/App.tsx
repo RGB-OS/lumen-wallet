@@ -90,11 +90,11 @@ function App() {
       <QueryProvider>
         <ConfirmProvider>
           <ToastProvider>
-            <AutoRefreshProvider>
+        
               <HashRouter>
                 <AppWrapper />
               </HashRouter>
-            </AutoRefreshProvider>
+            
           </ToastProvider>
         </ConfirmProvider>
       </QueryProvider>

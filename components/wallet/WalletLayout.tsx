@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Icons } from "../icons";
 import { AppDropdownMenu } from "../common/AppDropdownMenu";
+import { AutoRefreshProvider } from "@/providers/autoRefreshProvider";
 
 const TITLE_MAP: { pattern: RegExp; title: string }[] = [
   { pattern: /^\/wallet$/, title: 'Wallet Overview' },
@@ -27,6 +28,7 @@ export const WalletLayout: React.FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <RLNApiProvider>
+       <AutoRefreshProvider>
       <div className="h-screen w-full flex flex-col bg-background ">
      
       {showBack && ( <div className="flex justify-between px-6 py-4 items-center">
@@ -46,6 +48,7 @@ export const WalletLayout: React.FC<PropsWithChildren> = ({ children }) => {
       <Outlet />
       </div>
       </div>
+      </AutoRefreshProvider>
     </RLNApiProvider>
   );
 }
