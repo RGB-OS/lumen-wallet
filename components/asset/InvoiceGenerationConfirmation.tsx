@@ -36,8 +36,7 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
     const witness = searchParams.get('witness');
     const blind = searchParams.get('blind');
     
-    console.log('URL params:', { assetId, amount, durationSeconds, witness, blind });
-    
+
     if (!durationSeconds || witness === null) {
       console.error('Missing required params: durationSeconds or witness');
       return null;

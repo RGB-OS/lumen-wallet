@@ -115,7 +115,6 @@ export default function SendAssetPage() {
 
 
   const onSubmit = async (data: SendAssetForm) => {
-    console.log('Submitting send asset form:', data);
     if (!decodedInvoice) {
       setError('invoice', { type: 'manual', message: 'Invalid or missing decoded invoice' });
       return;
@@ -139,7 +138,6 @@ export default function SendAssetPage() {
 
       // Show confirmation popup
       const response = await walletService.openTransactionConfirmationPopup(transactionData);
-      console.log('Transaction response:', response);
       setTxid(response.txid);
       setErrorMsg(null);
     } catch (err: any) {

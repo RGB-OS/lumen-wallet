@@ -50,7 +50,6 @@ export default function ReceiveAssetPage() {
     return assetOptions.find((a) => a.asset_id === asset_id);
   }, [asset_id, assetOptions])
 
-  console.log(assetOptions, assetsData)
   const {
     register,
     handleSubmit,
@@ -80,7 +79,6 @@ export default function ReceiveAssetPage() {
   const witness = watch("witness");
   const navigate = useNavigate();
   const onSubmit = async (data: ReceiveAssetForm) => {
-    console.log('Submitting receive asset form:', data);
     setErrorMessage(null);
 
     // Validate required fields
@@ -111,10 +109,8 @@ export default function ReceiveAssetPage() {
       }
 
       // Show confirmation popup
-      console.log('Opening invoice generation confirmation popup with body:', body);
       try {
         const res = await walletService.openInvoiceGenerationConfirmationPopup(body) as RgbInvoiceResponse;
-        console.log('Received response from popup:', res);
         if (res && res.invoice) {
           setInvoice(res.invoice);
         } else {

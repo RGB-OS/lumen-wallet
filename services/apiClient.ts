@@ -6,10 +6,10 @@ import { openLoginTabAndClosePopup } from '@/utils';
 // Safe storage access with fallbacks
 const getStorageItems = async (keys: string[]): Promise<Array<{ key: string; value: string }>> => {
   try {
-    console.log('🔍 Storage check:', { keys });
+    // console.log('🔍 Storage check:', { keys });
     
     // Use WXT storage API
-    console.log('📦 Using WXT storage');
+    // console.log('📦 Using WXT storage');
     const results = await Promise.all(
       keys.map(async (key) => {
         // Ensure key has local: prefix
@@ -87,11 +87,11 @@ apiClient.interceptors.request.use(
       // Add request ID for tracking
       config.headers['X-Request-ID'] = crypto.randomUUID();
 
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        baseURL: config.baseURL,
-        params: config.params,
-        data: config.data,
-      });
+      // console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      //   baseURL: config.baseURL,
+      //   params: config.params,
+      //   data: config.data,
+      // });
 
       return config;
     } catch (error) {
@@ -108,23 +108,23 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`, {
-      data: response.data,
-    });
+    // console.log(`✅ API Response: ${response.status} ${response.config.url}`, {
+    //   data: response.data,
+    // });
     return response;
   },
   (error: AxiosError<ApiError>) => {
     const { response, request, message } = error;
     
-    console.error('❌ API Error:', {
-      status: response?.status,
-      url: response?.config?.url,
-      message: response?.data?.message || message,
-      error: response?.data?.error,
-      name: response?.data?.name,
-      code: response?.data?.code,
-      data: response?.data,
-    });
+    // console.error('❌ API Error:', {
+    //   status: response?.status,
+    //   url: response?.config?.url,
+    //   message: response?.data?.message || message,
+    //   error: response?.data?.error,
+    //   name: response?.data?.name,
+    //   code: response?.data?.code,
+    //   data: response?.data,
+    // });
 
     // Handle different error types
     if (response) {

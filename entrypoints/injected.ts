@@ -7,21 +7,19 @@ declare global {
 }
 
 export default defineUnlistedScript(() => {
-    console.log("Hello from injected.ts");
     let idCounter = 0;
   
     async function callWebLN(method: string, params?: any): Promise<any> {
   
       return new Promise((resolve, reject) => {
         const id = ++idCounter;
-        console.log(`Calling WebLN method: ${method}`, { id, params });
+        // console.log(`Calling WebLN method: ${method}`, { id, params });
         window.postMessage({ id, webln: { method, params } }, '*');
   
         const handler = (event: MessageEvent) => {
           const res = event.data.weblnResponse;
           if (res?.id !== id) return;
           window.removeEventListener('message', handler);
-          console.log(res)
           if (res.error) {
             const { message, type, code } = res.error;
             const errorMessage = message || 'Unknown error';

@@ -47,7 +47,6 @@ export default function SendRecipient() {
         if (decoded?.asset_id) {
           navigate(`/wallet/send/${decoded.asset_id}`, { state: { invoice: input } });
         } else {
-            console.log('decoded', decoded);
           // Fallback to generic send page if asset id missing
           navigate('/wallet/send', { state: { invoice: input } });
         }

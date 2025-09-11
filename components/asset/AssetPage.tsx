@@ -9,6 +9,7 @@ import { twMerge } from 'tailwind-merge';
 import { 
   Drawer, 
   DrawerContent, 
+  DrawerDescription,
   DrawerHeader, 
   DrawerTitle 
 } from '@/components/ui/drawer';
@@ -66,7 +67,6 @@ export const AssetPage = () => {
   
   const refreshTransfersMutation = useRefreshTransfers();
   
-  console.log('AssetPage transfersData', transfersData, 'transfersLoading', transfersLoading, 'transfersError', transfersError);
   const transfers = transfersData?.transfers ?? [];
 
   const asset = useMemo(() => {
@@ -90,7 +90,6 @@ export const AssetPage = () => {
   };
 
   const handleRefreshTransfers = async () => {
-    console.log('Refreshing transfers for asset_id:', asset_id);
     await refreshTransfersMutation.mutateAsync({ skip_sync: false });
   };
 
@@ -226,9 +225,12 @@ export const AssetPage = () => {
       {/* Transaction Details Drawer */}
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
-          {/* <DrawerHeader>
+          <DrawerHeader>
             <DrawerTitle>Transaction Details</DrawerTitle>
-          </DrawerHeader> */}
+            <DrawerDescription>
+              View detailed information about this transaction including status, amounts, and UTXO details.
+            </DrawerDescription>
+          </DrawerHeader>
           {selectedTransaction && asset && (
             <TransferDetails
               transaction={selectedTransaction}

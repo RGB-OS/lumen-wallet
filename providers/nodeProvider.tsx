@@ -51,8 +51,6 @@ export const RLNApiProvider: React.FC<PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         if (hasRunRLNInit) return
         hasRunRLNInit = true
-    
-        console.log('RLNApiProvider useEffect called once')
         initRLNData()
       }, [])
 

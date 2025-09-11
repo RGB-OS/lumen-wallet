@@ -37,7 +37,6 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
     const feeRate = searchParams.get('fee_rate');
     const minConfirmations = searchParams.get('min_confirmations');
     const skipSync = searchParams.get('skip_sync');
-    console.log({ recipientId, assetId, assignmentType, assignmentValue, transportEndpoints, donation, feeRate, minConfirmations, skipSync });
 
     if (!recipientId || !assetId || !assignmentValue || !transportEndpoints) {
       return null;

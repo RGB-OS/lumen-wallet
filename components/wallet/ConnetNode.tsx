@@ -32,7 +32,6 @@ export const ConnectNode = () => {
   const location = useLocation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   //   const { toast } = useToast();
-  console.log('ConnectNode component rendered');
   const { isAuthenticated, isLoading: authorizing } = useAuth()
   const externalInvoke = new URLSearchParams(location.search).get('from') === 'external';
 
@@ -48,7 +47,6 @@ export const ConnectNode = () => {
     },
   });
 
-  console.log('defaultValues', import.meta.env.VITE_DEFAULT_NODE_ENDPOINT);
 
   useEffect(() => {
     if (!authorizing && isAuthenticated) {
@@ -60,7 +58,6 @@ export const ConnectNode = () => {
 
   const onSubmit = async (data: ConnectNodeForm) => {
     setIsLoading(true);
-    console.log('ConnectNode component rendered');
 
     try {
       const response = await axios.get(`${data.nodeEndpoint}/nodeinfo`, {
@@ -69,7 +66,7 @@ export const ConnectNode = () => {
           'Authorization': `Bearer ${data.accessToken}`,
         },
       })
-      console.log('Response: sss', response);
+
 
 
       // Store connection details for future use
@@ -77,14 +74,12 @@ export const ConnectNode = () => {
       await storage.setItem('local:access-token', data.accessToken);
 
       if (externalInvoke) {
-        console.log('This popup was opened by script, so close it');
         browser.runtime.sendMessage({
           type: 'wallet-auth-response',
           success: true,
         });
         closeWindow()
       } else {
-        console.log('This popup was opened by within EXTENSION');
         navigate('/wallet')
       }
 

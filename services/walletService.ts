@@ -59,7 +59,6 @@ class WalletService {
                     this.enabledOrigins.add(origin);
                 }
             }
-            console.log('Loaded connected sites:', this.connectedSites.size);
         } catch (error) {
             console.error('Failed to load connected sites:', error);
         }
@@ -101,7 +100,6 @@ class WalletService {
             this.connectedSites.set(origin, site);
             this.enabledOrigins.add(origin);
             await this.saveConnectedSites();
-            console.log('Added connected site:', origin);
         } catch (error) {
             console.error('Failed to add connected site:', error);
         }
@@ -115,7 +113,6 @@ class WalletService {
             this.connectedSites.delete(origin);
             this.enabledOrigins.delete(origin);
             await this.saveConnectedSites();
-            console.log('Removed connected site:', origin);
         } catch (error) {
             console.error('Failed to remove connected site:', error);
         }
@@ -171,7 +168,6 @@ class WalletService {
 
         const approved = await new Promise((resolve) => {
             const handler = (response: any, _sender: any, sendResponse: any) => {
-                console.log('Received approval response:', response);
                 if (response.type === 'webln-approval-response') {
                     browser.runtime.onMessage.removeListener(handler);
                     resolve(response.approved);
@@ -179,7 +175,6 @@ class WalletService {
             };
 
             browser.runtime.onMessage.addListener(handler);
-            console.log('Waiting for user approval...');
         });
 
         if (!approved) {
@@ -211,7 +206,6 @@ class WalletService {
      * @throws Error if the node info cannot be retrieved
      */
     async getInfo(origin: string = this.trustedOrigin): Promise<GetInfoResponse> {
-        console.log('Getting node info for origin:', origin);
         if (!this.enabledOrigins.has(origin)) {
             throw new WalletPermissionError(origin);
         }
@@ -268,7 +262,6 @@ class WalletService {
         // Update last used timestamp
         await this.updateLastUsed(origin);
         
-        console.log(`[walletService] Handling request: ${method}`, params);
         try {
             switch (method) {
                 case 'listpeers':
@@ -385,7 +378,6 @@ class WalletService {
             message: messageData.message
         });
 
-        console.log('Opening message signing confirmation popup with params:', messageData);
         const confirmUrl = browser.runtime.getURL(`/popup.html#/confirm-message-signing?${params.toString()}`);
 
         const popup = await browser.windows.create({

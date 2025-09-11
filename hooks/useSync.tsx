@@ -10,9 +10,8 @@ export function useSync() {
     setIsSyncing(true);
     try {
       await nodeService.sync();
-      console.log('Sync completed successfully');
     } catch (error) {
-      console.error('Sync failed:', error);
+      console.warn('Sync failed:', error);
       throw error;
     } finally {
       setIsSyncing(false);

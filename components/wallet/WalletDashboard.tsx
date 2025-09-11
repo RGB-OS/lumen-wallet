@@ -19,7 +19,7 @@ import {
   useNetworkInfo,
   useListTransactions
 } from "@/hooks/useWalletQueries";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Icons } from "@/components/icons";
 import { twMerge } from "tailwind-merge";
 import { TransactionButtons } from "./TransactionButtons";
@@ -200,9 +200,12 @@ export const WalletDashboard = () => {
       {/* Transaction Details Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent>
-          {/* <DrawerHeader>
+          <DrawerHeader>
             <DrawerTitle>Transaction Details</DrawerTitle>
-          </DrawerHeader> */}
+            <DrawerDescription>
+              View detailed information about this Bitcoin transaction including amounts, fees, and confirmation status.
+            </DrawerDescription>
+          </DrawerHeader>
           {selectedTransaction && (
             <TransactionDetails
               transaction={selectedTransaction}
