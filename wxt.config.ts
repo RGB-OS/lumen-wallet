@@ -5,7 +5,7 @@ import path from "path";
 export default defineConfig({
   manifest: {
     action: {
-      default_title: 'Lumen Wallet',
+      default_title: 'Lumen',
     },
     permissions: ['storage'],
     web_accessible_resources: [

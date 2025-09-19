@@ -14,7 +14,8 @@ import {
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
-  DrawerTitle
+  DrawerTitle,
+  DrawerFooter
 } from '@/components/ui/drawer';
 import { CreateUTXOForm } from './CreateUTXOForm';
 import {
@@ -183,14 +184,16 @@ export const UTXOsPage = () => {
 
       {/* Create UTXO Form Drawer */}
       <Drawer open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
-        <DrawerContent>
-          <DrawerHeader>
+        <DrawerContent className="h-[90vh] flex flex-col">
+          <DrawerHeader className="shrink-0">
             <DrawerTitle>Create UTXOs</DrawerTitle>
             <DrawerDescription>
               Create new UTXOs to receive RGB assets. This will generate new Bitcoin addresses for your wallet.
             </DrawerDescription>
           </DrawerHeader>
-          <CreateUTXOForm onSuccess={handleCreateUTXOSuccess} />
+          <div className="flex-1 min-h-0">
+            <CreateUTXOForm onSuccess={handleCreateUTXOSuccess} />
+          </div>
         </DrawerContent>
       </Drawer>
     </div>

@@ -78,11 +78,12 @@ export const CreateUTXOForm: React.FC<CreateUTXOFormProps> = ({ onSuccess }) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="num">Number of UTXOs</Label>
-                      <Input
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-6 bg-background">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="num">Number of UTXOs</Label>
+            <Input
               id="num"
               type="number"
               min="1"
@@ -91,14 +92,14 @@ export const CreateUTXOForm: React.FC<CreateUTXOFormProps> = ({ onSuccess }) => 
               placeholder="4"
               disabled={createUTXOsMutation.isPending}
             />
-          <p className="text-xs text-muted-foreground">
-            Number of UTXOs to create
-          </p>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Number of UTXOs to create
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="size">UTXO Size (sats)</Label>
-                      <Input
+          <div className="space-y-2">
+            <Label htmlFor="size">UTXO Size (sats)</Label>
+            <Input
               id="size"
               type="number"
               min="1"
@@ -107,14 +108,14 @@ export const CreateUTXOForm: React.FC<CreateUTXOFormProps> = ({ onSuccess }) => 
               placeholder="32500"
               disabled={createUTXOsMutation.isPending}
             />
-          <p className="text-xs text-muted-foreground">
-            Size of each UTXO in satoshis
-          </p>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Size of each UTXO in satoshis
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="fee_rate">Fee Rate (sat/vB)</Label>
-                      <Input
+          <div className="space-y-2">
+            <Label htmlFor="fee_rate">Fee Rate (sat/vB)</Label>
+            <Input
               id="fee_rate"
               type="number"
               min="1"
@@ -123,21 +124,22 @@ export const CreateUTXOForm: React.FC<CreateUTXOFormProps> = ({ onSuccess }) => 
               placeholder="5"
               disabled={createUTXOsMutation.isPending}
             />
-          <p className="text-xs text-muted-foreground">
-            Fee rate in satoshis per virtual byte
-          </p>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Fee rate in satoshis per virtual byte
+            </p>
+          </div>
+        </form>
       </div>
 
-      <div className="pt-4 border-t border-border">
-                  <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={createUTXOsMutation.isPending}
-          >
-            {createUTXOsMutation.isPending ? 'Creating UTXOs...' : 'Create UTXOs'}
-          </Button>
+      <div className="shrink-0 p-6 pt-4 border-t border-border bg-background">
+        <Button 
+          onClick={handleSubmit}
+          className="w-full" 
+          disabled={createUTXOsMutation.isPending}
+        >
+          {createUTXOsMutation.isPending ? 'Creating UTXOs...' : 'Create UTXOs'}
+        </Button>
       </div>
-    </form>
+    </div>
   );
 };

@@ -5,15 +5,15 @@ class AuthService {
     async getToken(): Promise<string | null> {
         const token = await storage.getItem<string>('local:access-token');
         if (token) {
-        const [, payloadBase64] = token.split('.');
-        const payloadJson = atob(payloadBase64);
-        const payload = JSON.parse(payloadJson);
-        const now = Date.now() / 1000; // in seconds
-        if (payload.exp && payload.exp < now) {
-            console.warn('Token expired');
-            await storage.removeItem('local:access-token');
-            return null;
-        }
+        // const [, payloadBase64] = token.split('.');
+        // const payloadJson = atob(payloadBase64);
+        // const payload = JSON.parse(payloadJson);
+        // const now = Date.now() / 1000; // in seconds
+        // if (payload.exp && payload.exp < now) {
+        //     console.warn('Token expired');
+        //     await storage.removeItem('local:access-token');
+        //     return null;
+        // }
         return token;
         }
         return null;
