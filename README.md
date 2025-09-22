@@ -1,14 +1,75 @@
+# Lumen – RGB Lightning Node Connector
+
+**Lumen** is a browser extension that connects your browser to an **RGB Lightning Node (RLN)**.  
+It acts as a bridge between your node and any dApp that supports the [RGB WebLN interface](https://thunderstack.gitbook.io/rgbln).
+
+Lumen is **not a wallet**. It does not hold private keys or sensitive data.  
+Instead, it lets you use your own RGB LN as a wallet backend, either self-hosted or running on **ThunderStack Cloud**.
+
+---
+
+## Features
+- Connect to self-hosted or ThunderStack Cloud RGB LN via HTTP API  
+- Expose node functionality through RGB WebLN  
+- Manage RGB assets directly in your browser  
+- Pay and receive invoices  
+- Sign messages  
+- Use WebLN calls in dApps (e.g. `rgbInvoice`, `sendAsset`)  
+- **Non-custodial:** your node manages all state and signing  
+
+---
+
+## Getting Started
+
+### 1. Installation
+- The extension will be available on the **Chrome Web Store** (link coming soon).  
+- For development builds, clone this repository and load the extension manually in your browser.  
+
+---
+
+### 2. Set Up an RGB LN
+You have two options:
+
+1. **Run your own node**
+   - Install RLN locally  
+   - Initialize and unlock it  
+
+2. **Use ThunderStack Cloud**
+   - Simplest option  
+   - Create a node online (Biscuit authentication enabled by default)  
+   - [Guide: Create a node on ThunderStack Cloud](https://docs.thunderstack.org/bitcoin-native-infrastructure/readme/getting-started-with-thunderstack-rgb-cloud/general/create-rln-node)  
+
+---
+
+### 3. Get Connection Parameters
+Once your node is ready and unlocked, open the **Connect** tab in your node dashboard.  
+
+You’ll need:
+- **Node API endpoint** (HTTP URL)  
+- **Node token** (authentication token or Biscuit)  
+
+---
+
+### 4. Connect in Lumen
+1. Open the Lumen extension  
+2. Enter the API endpoint and token  
+3. Click **Connect**  
+
+If successful, your node will appear as **connected** and ready to use.  
+
+---
+
 # WebLN RGB LN Provider
 
 ## Overview
 
 This extension injects a **WebLN provider** into web pages (via `window.webln`) and proxies method calls to the background service (`walletService`). It follows the **WebLN** specification where applicable and implements a subset of methods tailored for RGB/Lightning usage:
 
-* `webln.enable()`
-* `webln.isEnabled()`
-* `webln.getInfo()`
-* `webln.getBalance()`
-* `webln.request(method, params)` – generic passthrough for RGB node APIs
+* `rgbwebln.enable()`
+* `rgbwebln.isEnabled()`
+* `rgbwebln.getInfo()`
+* `rgbwebln.getBalance()`
+* `rgbwebln.request(method, params)` – generic passthrough for RGB node APIs
 
 > Notes
 >
@@ -20,7 +81,7 @@ This extension injects a **WebLN provider** into web pages (via `window.webln`) 
 
 ## Public API Surface
 
-### `webln.enable()`
+### `rgbwebln.enable()`
 
 Requests permission for the current origin to access WebLN features.
 
@@ -44,7 +105,7 @@ function enable(): Promise<void>;
 
 ---
 
-### `webln.isEnabled()`
+### `rgbwebln.isEnabled()`
 
 Returns whether the current origin has permission.
 
@@ -58,7 +119,7 @@ function isEnabled(): Promise<boolean>;
 
 ---
 
-### `webln.getInfo()`
+### `rgbwebln.getInfo()`
 
 Fetches metadata about the connected node.
 
@@ -88,7 +149,7 @@ type GetInfoResponse = {
 
 ---
 
-### `webln.getBalance()`
+### `rgbwebln.getBalance()`
 
 Returns wallet balance for the current account.
 
@@ -114,7 +175,7 @@ type BalanceResponse = {
 
 ---
 
-### `webln.request(method, params)`
+### `rgbwebln.request(method, params)`
 
 Generic passthrough for provider-specific or node-specific methods.
 
@@ -209,16 +270,16 @@ async function connectAndFetch() {
   if (!('webln' in window)) throw new Error('WebLN not available');
   const webln = window.webln as WebLNProvider;
 
-  const enabled = (await webln.isEnabled()) ?? false;
-  if (!enabled) await webln.enable();
+  const enabled = (await rgbwebln.isEnabled()) ?? false;
+  if (!enabled) await rgbwebln.enable();
 
-  const info = await webln.getInfo();
+  const info = await rgbwebln.getInfo();
   console.log('Node alias:', info.node.alias);
 
-  const bal = await webln.getBalance();
+  const bal = await rgbwebln.getBalance();
   console.log('Balance (sats):', bal.balance);
 
-  const assets = await webln.request('listassets');
+  const assets = await rgbwebln.request('listassets');
   console.log('Assets:', assets);
 }
 ```
