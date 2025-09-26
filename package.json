@@ -2,7 +2,7 @@
   "name": "Lumen",
   "description": "Lumen - RGB Lightning Node Connector. Connect to RGB Lightning node and manage RGB assets through a RGB WebLN interface.",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "wxt",
