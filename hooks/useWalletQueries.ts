@@ -147,8 +147,11 @@ export const useRefreshTransfers = () => {
   return useMutation({
     mutationFn: (params?: { skip_sync?: boolean }) => nodeService.refreshtransfers(params),
     onSuccess: () => {
-      // Invalidate all transfer queries
+      // Refreshing can settle transfers, which changes asset balances too
       queryClient.invalidateQueries({ queryKey: ['listTransfers'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.listAssets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.btcBalance });
+      queryClient.invalidateQueries({ queryKey: queryKeys.listUnspents });
     },
   });
 };

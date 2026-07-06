@@ -65,7 +65,8 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
       const fetchAssetInfo = async () => {
         try {
           const assets = await nodeService.listassets();
-          const asset = assets.nia.find((a: any) => a.asset_id === txData.asset_id);
+          const asset = [...(assets.nia ?? []), ...(assets.uda ?? []), ...(assets.cfa ?? []), ...(assets.ifa ?? [])]
+            .find((a: any) => a.asset_id === txData.asset_id);
           if (asset) {
             setAssetInfo(asset);
           }

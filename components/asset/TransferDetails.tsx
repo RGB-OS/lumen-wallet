@@ -125,7 +125,7 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(transaction.txid, 'Transaction ID')}
+                      onClick={() => copyToClipboard(transaction.txid!, 'Transaction ID')}
                       className="h-6 w-6 p-0 hover:bg-muted"
                     >
                       <Icons.copy className="h-3 w-3" />
@@ -147,7 +147,7 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
               </div>
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Expiration</label>
-                <p className="text-sm mt-1">{formatDate(transaction.expiration)}</p>
+                <p className="text-sm mt-1">{transaction.expiration_timestamp ? formatDate(transaction.expiration_timestamp) : '—'}</p>
               </div>
               <div>
                 <label className="text-xs text-gray-dark uppercase tracking-wide">Recipient ID</label>
@@ -159,7 +159,7 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(transaction.recipient_id, 'Recipient ID')}
+                      onClick={() => copyToClipboard(transaction.recipient_id!, 'Recipient ID')}
                       className="h-6 w-6 p-0 hover:bg-muted"
                     >
                       <Icons.copy className="h-3 w-3" />
@@ -209,7 +209,7 @@ export const TransferDetails: React.FC<TransferDetailsProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(transaction.receive_utxo, 'Receive UTXO')}
+                      onClick={() => copyToClipboard(transaction.receive_utxo!, 'Receive UTXO')}
                       className="h-6 w-6 p-0 hover:bg-muted"
                     >
                       <Icons.copy className="h-3 w-3" />
