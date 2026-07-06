@@ -75,6 +75,7 @@ export const AssetPage = () => {
       ...(assetsData.nia ?? []),
       ...(assetsData.uda ?? []),
       ...(assetsData.cfa ?? []),
+      ...(assetsData.ifa ?? []),
     ];
     return all.find((a) => a.asset_id === asset_id);
   }, [assetsData, asset_id]);
@@ -198,7 +199,7 @@ export const AssetPage = () => {
                       {tx.kind} {formattedValue} {asset.ticker ?? '—'}
                     </div>
                     <div className="text-xs text-gray-dark mt-1">
-                      exp: {new Date(tx.expiration * 1000).toLocaleString()}
+                      exp: {tx.expiration_timestamp ? new Date(tx.expiration_timestamp * 1000).toLocaleString() : '—'}
                     </div>
                   </div>
                   <div className='text-right'>

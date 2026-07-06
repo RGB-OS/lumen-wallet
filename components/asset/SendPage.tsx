@@ -61,13 +61,13 @@ export default function SendAssetPage() {
 
   const asset = useMemo(() => {
     if (!assetsData || !selectedAssetId) return null;
-    const all = [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
+    const all = [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? []), ...(assetsData.ifa ?? [])];
     return all.find((a) => a.asset_id === selectedAssetId);
   }, [assetsData, selectedAssetId]);
 
   const allAssets = useMemo(() => {
     if (!assetsData) return [];
-    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
+    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? []), ...(assetsData.ifa ?? [])];
   }, [assetsData]);
 
   useEffect(() => {

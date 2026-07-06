@@ -4,16 +4,19 @@ import { authService } from '@/services/authService';
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const fetchToken = async () => {
+    const fetchAuth = async () => {
       const storedToken = await authService.getToken()
       setToken(storedToken)
+      // Connected when an endpoint is configured; the token is optional
+      setIsAuthenticated(await authService.isAuthenticated())
       setIsLoading(false)
     }
-    fetchToken()
+    fetchAuth()
   }, [])
 
-  return { token, isLoading, isAuthenticated: !!token }
+  return { token, isLoading, isAuthenticated }
 }

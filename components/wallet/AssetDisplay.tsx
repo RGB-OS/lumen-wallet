@@ -76,7 +76,7 @@ export const AssetDisplay = () => {
 
     const rgbAssets: Asset[] = [];
 
-    const processAssets = (list?: Array<any>, defaultIcon = '🎨') => {
+    const processAssets = (list?: Array<any> | null, defaultIcon = '🎨') => {
       if (!list) return;
   
       for (const asset of list) {
@@ -96,6 +96,7 @@ export const AssetDisplay = () => {
     processAssets(assetsData.nia, '🎨');
     processAssets(assetsData.uda, '🧩');
     processAssets(assetsData.cfa, '🖼️');
+    processAssets(assetsData.ifa, '💠');
   
     setAssets(prev => upsertAssets(prev, rgbAssets));
 

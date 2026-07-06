@@ -62,7 +62,8 @@ export const InvoiceGenerationConfirmation: React.FC<InvoiceGenerationConfirmati
       const fetchAssetInfo = async () => {
         try {
           const assets = await nodeService.listassets();
-          const asset = assets.nia.find((a: any) => a.asset_id === invData.asset_id);
+          const asset = [...(assets.nia ?? []), ...(assets.uda ?? []), ...(assets.cfa ?? []), ...(assets.ifa ?? [])]
+            .find((a: any) => a.asset_id === invData.asset_id);
           if (asset) {
             setAssetInfo(asset);
           }

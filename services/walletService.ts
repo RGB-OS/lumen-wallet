@@ -223,7 +223,7 @@ class WalletService {
                     alias: 'ThunderStack',
                     pubkey: data.pubkey,
                 },
-                methods: ['request.rgbinvoice', 'request.sendasset', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
+                methods: ['request.rgbinvoice', 'request.sendasset', 'request.sendrgb', 'request.listtransfers', 'request.address', 'request.listassets', 'request.refreshtransfers']
             }
         } catch (e: any) {
             console.error('Failed to get node info:', e);
@@ -283,6 +283,7 @@ class WalletService {
                 case 'listtransfers':
                     return await nodeService.listtransfers(params);
                 case 'sendasset':
+                case 'sendrgb': // node renamed /sendasset to /sendrgb
                     // Show transaction confirmation popup for external requests
                     return await this.openTransactionConfirmationPopup(params);
                     // return await nodeService.sendasset(params);

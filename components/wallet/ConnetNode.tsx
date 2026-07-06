@@ -16,7 +16,7 @@ import { closeWindow } from "@/utils";
 
 const connectNodeSchema = z.object({
   nodeEndpoint: z.string().min(1, "Node endpoint is required"),
-  accessToken: z.string().min(1, "Access token is required"),
+  accessToken: z.string().optional(),
 });
 
 type ConnectNodeForm = z.infer<typeof connectNodeSchema>;
@@ -42,7 +42,7 @@ export const ConnectNode = () => {
   } = useForm<ConnectNodeForm>({
     resolver: zodResolver(connectNodeSchema),
     defaultValues: {
-      nodeEndpoint: import.meta.env.VITE_DEFAULT_NODE_ENDPOINT || '',
+      nodeEndpoint: import.meta.env.VITE_DEFAULT_NODE_ENDPOINT || 'http://127.0.0.1:3012',
       accessToken: import.meta.env.VITE_DEFAULT_ACCESS_TOKEN || '',
     },
   });
@@ -60,18 +60,24 @@ export const ConnectNode = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(`${data.nodeEndpoint}/nodeinfo`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${data.accessToken}`,
-        },
-      })
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (data.accessToken) {
+        headers['Authorization'] = `Bearer ${data.accessToken}`;
+      }
+      const response = await axios.get(`${data.nodeEndpoint}/nodeinfo`, { headers })
 
 
 
       // Store connection details for future use
       await storage.setItem('local:node-endpoint', data.nodeEndpoint);
-      await storage.setItem('local:access-token', data.accessToken);
+      if (data.accessToken) {
+        await storage.setItem('local:access-token', data.accessToken);
+      } else {
+        // Clear any stale token so requests go out without an Authorization header
+        await storage.removeItem('local:access-token');
+      }
 
       if (externalInvoke) {
         browser.runtime.sendMessage({

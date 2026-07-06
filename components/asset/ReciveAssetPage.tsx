@@ -42,7 +42,7 @@ export default function ReceiveAssetPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const assetOptions = useMemo(() => {
     if (!assetsData) return [];
-    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? [])];
+    return [...(assetsData.nia ?? []), ...(assetsData.uda ?? []), ...(assetsData.cfa ?? []), ...(assetsData.ifa ?? [])];
   }, [assetsData]);
 
   const asset = useMemo(() => {

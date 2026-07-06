@@ -20,13 +20,14 @@ class AuthService {
     }
     
     async isAuthenticated(): Promise<boolean> {
+        // A token is optional: nodes started without auth accept requests
+        // without an Authorization header
         const nodeEndpoint = await storage.getItem<string>('local:node-endpoint');
         if (!nodeEndpoint) {
             console.warn('Node endpoint not set');
             return false;
         }
-        const token = await this.getToken();
-        return !!token;
+        return true;
     }
     
 

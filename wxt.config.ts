@@ -7,7 +7,7 @@ export default defineConfig({
     action: {
       default_title: 'Lumen',
     },
-    permissions: ['storage', 'activeTab'],
+    permissions: ['storage'],
     web_accessible_resources: [
       {
         resources: ["injected.js"],

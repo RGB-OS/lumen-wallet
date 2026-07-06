@@ -17,6 +17,7 @@ export interface NodeInfoResponse {
   channel_asset_max_amount: number
   network_nodes: number
   network_channels: number
+  latest_rgs_snapshot_timestamp?: number | null
 }
 export interface RgbTransfer {
   idx: number;
@@ -26,17 +27,17 @@ export interface RgbTransfer {
   requested_assignment: {
     type: string;
     value: number;
-  };
+  } | null;
   assignments: Array<{
     type: string;
     value: number;
   }>;
   kind: string;
-  txid: string;
-  recipient_id: string;
-  receive_utxo: string;
+  txid: string | null;
+  recipient_id: string | null;
+  receive_utxo: string | null;
   change_utxo: string | null;
-  expiration: number;
+  expiration_timestamp: number | null;
   transport_endpoints: Array<{
     endpoint: string;
     transport_type: string;
@@ -55,20 +56,50 @@ interface InvoiceBase {
   transport_endpoints: string[]
 }
 export interface InvoiceDecoded extends InvoiceBase {
-  asset_schema: 'Nia' | 'Cfa' | 'Uda' | string
+  recipient_type?: 'Blind' | 'Witness' | string
+  asset_schema: 'Nia' | 'Cfa' | 'Uda' | 'Ifa' | string
   network: 'Regtest' | 'Mainnet' | 'Testnet' | string
   expiration_timestamp: number
 
+}
+export interface WitnessData {
+  amount_sat: number;
+  blinding?: number | null;
 }
 export interface SendRGBAsset extends InvoiceBase {
   donation: boolean;
   fee_rate: number;
   min_confirmations: number;
-  skip_sync: boolean;
+  skip_sync?: boolean;
+  witness_data?: WitnessData | null;
+}
+
+export interface RgbRecipient {
+  recipient_id: string;
+  witness_data?: WitnessData | null;
+  assignment: Assignment;
+  transport_endpoints: string[];
+}
+
+export interface SendRgbRequest {
+  donation: boolean;
+  fee_rate: number;
+  min_confirmations: number;
+  expiration_timestamp?: number | null;
+  recipient_map: Record<string, RgbRecipient[]>;
+}
+
+export interface RgbInvoiceResponse {
+  recipient_id: string;
+  invoice: string;
+  expiration_timestamp: number | null;
+  batch_transfer_idx: number;
 }
 
 export interface ListTransfersResponse {
   transfers: RgbTransfer[];
+  first_index_offset: number;
+  last_index_offset: number;
 }
 
 export enum TransferStatus {
@@ -162,10 +193,15 @@ export interface CfaAsset extends AssetBase {
   ticker: string;// TODO: clirify if this is correct
 }
 
+export interface IfaAsset extends AssetBase {
+  ticker: string;
+}
+
 export interface ListAssetsResponse {
-  nia: NiaAsset[];
-  uda: UdaAsset[];
-  cfa: CfaAsset[];
+  nia?: NiaAsset[] | null;
+  uda?: UdaAsset[] | null;
+  cfa?: CfaAsset[] | null;
+  ifa?: IfaAsset[] | null;
 }
 
 export interface CreateUTXOsRequest {
@@ -198,8 +234,12 @@ export interface UTXO {
 export interface Unspent {
   utxo: UTXO;
   rgb_allocations: RGBAllocation[];
+  /** Number of pending blind receives reserving this UTXO */
+  pending_blinded: number;
 }
 
 export interface ListUnspentsResponse {
   unspents: Unspent[];
+  first_index_offset: number;
+  last_index_offset: number;
 }

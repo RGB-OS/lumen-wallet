@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListAssetsResponse, ListTransfersResponse, NetworkInfoResponse, NodeInfoResponse, SendRGBAsset } from '@/types/rgb-types';
+import { AddressResponse, BTCBalance, CreateUTXOsRequest, InvoiceDecoded, ListAssetsResponse, ListTransfersResponse, ListUnspentsResponse, NetworkInfoResponse, NodeInfoResponse, RgbInvoiceResponse, RgbRecipient, SendRGBAsset, SendRgbRequest } from '@/types/rgb-types';
 
 type RGBInvoiceRequest = {
     asset_id?: string;
@@ -8,9 +8,6 @@ type RGBInvoiceRequest = {
     min_confirmations: number;
     witness: boolean;
     blind?: boolean;
-};
-type RgbInvoiceResponse = {
-    invoice: string;
 };
 type DecodeInvoiceRequest = {
     invoice: string;
@@ -25,6 +22,18 @@ type SendBTCRequest = {
     skip_sync: boolean;
 };
 
+type RefreshFilter = {
+    status: 'WaitingCounterparty' | 'WaitingConfirmations';
+    incoming: boolean;
+};
+
+type SyncStrategy = 'FastSync' | 'FullSync' | 'FullScan';
+type SyncKeychain = 'Colored' | { Vanilla: { lookback: number } };
+type SyncParams = {
+    keychain?: SyncKeychain;
+    strategy?: SyncStrategy;
+};
+
 type ListTransactionsResponse = {
     transactions: Array<{
         transaction_type: string;
@@ -35,8 +44,10 @@ type ListTransactionsResponse = {
         confirmation_time: {
             height: number;
             timestamp: number;
-        };
+        } | null;
     }>;
+    first_index_offset: number;
+    last_index_offset: number;
 };
 
 class NodeService {
@@ -58,16 +69,16 @@ class NodeService {
 
     async listassets() {
         const res = await apiClient.post<ListAssetsResponse>('/listassets', {
-            filter_asset_schemas: ['Nia', 'Uda', 'Cfa'],
+            filter_asset_schemas: ['Nia', 'Uda', 'Cfa', 'Ifa'],
         });
         return res.data;
     }
     async listpeers() {
-        const res = await apiClient.post('/listpeers', {});
+        const res = await apiClient.get('/listpeers');
         return res.data;
     }
     async listchannels() {
-        const res = await apiClient.post('/listchannels', {});
+        const res = await apiClient.get('/listchannels');
         return res.data;
     }
     async getaddress() {
@@ -75,12 +86,15 @@ class NodeService {
         return res.data;
     }
 
-    async listtransfers({ assetId }: { assetId: string }) {
-        const res = await apiClient.post<ListTransfersResponse>('/listtransfers', { asset_id: assetId });
+    async listtransfers({ assetId, txid }: { assetId?: string; txid?: string }) {
+        const body: any = {};
+        if (assetId !== undefined) body.asset_id = assetId;
+        if (txid !== undefined) body.txid = txid;
+        const res = await apiClient.post<ListTransfersResponse>('/listtransfers', body);
         return res.data;
     }
 
-    async rgbinvoice<RgbInvoiceResponse>(params?: RGBInvoiceRequest) {
+    async rgbinvoice(params?: RGBInvoiceRequest) {
         const {
             asset_id,
             amount,
@@ -89,24 +103,22 @@ class NodeService {
             witness = false,
             blind = false,
         } = params ?? {};
-        
-        // Build request body with only defined values
+
+        // Invoice expiration is now an absolute unix timestamp
         const requestBody: any = {
-            duration_seconds,
+            expiration_timestamp: Math.floor(Date.now() / 1000) + duration_seconds,
             min_confirmations,
             witness,
         };
-        
-    
-        
-        // Only include asset_id and amount if they are defined and it's not a blind invoice
+
+        // Only include asset_id and assignment if they are defined and it's not a blind invoice
         if (!blind && asset_id !== undefined) {
             requestBody.asset_id = asset_id;
         }
         if (!blind && amount !== undefined) {
-            requestBody.amount = amount;
+            requestBody.assignment = { type: 'Fungible', value: amount };
         }
-        
+
         const res = await apiClient.post<RgbInvoiceResponse>('/rgbinvoice', requestBody);
         return res.data;
     }
@@ -126,39 +138,52 @@ class NodeService {
 
     }
 
-    async sendasset<TXIdResponse>(params: SendRGBAsset) {
+    async sendasset(params: SendRGBAsset) {
         const {
             asset_id,
             recipient_id,
             assignment,
             transport_endpoints,
+            witness_data,
             donation = false,
             fee_rate = 5,
             min_confirmations = 1,
-            skip_sync = false
         } = params;
         if (!asset_id || !recipient_id || !assignment || !transport_endpoints) {
             throw new Error('Missing required parameters for sendasset');
         }
-        const res = await apiClient.post<TXIdResponse>('/sendasset', {
-            asset_id,
+        // /sendasset was replaced by /sendrgb, which batches recipients per asset
+        const recipient: RgbRecipient = {
             recipient_id,
             assignment,
             transport_endpoints,
+        };
+        if (witness_data) {
+            recipient.witness_data = witness_data;
+        }
+        const requestBody: SendRgbRequest = {
             donation,
             fee_rate,
             min_confirmations,
-            skip_sync
-        });
+            recipient_map: {
+                [asset_id]: [recipient],
+            },
+        };
+        const res = await apiClient.post<TXIdResponse>('/sendrgb', requestBody);
 
         return res.data;
     }
-    async refreshtransfers(params?: { skip_sync?: boolean }) {
+    async refreshtransfers(params?: { skip_sync?: boolean; asset_id?: string; filter?: RefreshFilter[] }) {
         const {
-            skip_sync = false
+            skip_sync = false,
+            asset_id,
+            filter = [], // empty filter refreshes all transfers
         } = params ?? {};
 
-        const res = await apiClient.post('/refreshtransfers', { skip_sync });
+        const body: any = { filter, skip_sync };
+        if (asset_id !== undefined) body.asset_id = asset_id;
+
+        const res = await apiClient.post('/refreshtransfers', body);
         return res.data;
     }
 
@@ -177,14 +202,15 @@ class NodeService {
         return res.data;
     }
 
-    async listunspents(params?: { skip_sync?: boolean }) {
-        const { skip_sync = true } = params ?? {};
-        const res = await apiClient.post('/listunspents', { skip_sync });
+    async listunspents(params?: { skip_sync?: boolean; settled_only?: boolean }) {
+        const { skip_sync = true, settled_only = false } = params ?? {};
+        const res = await apiClient.post<ListUnspentsResponse>('/listunspents', { settled_only, skip_sync });
         return res.data;
     }
 
-    async sync() {
-        const res = await apiClient.post('/sync');
+    async sync(params?: SyncParams) {
+        const { keychain = 'Colored', strategy = 'FullSync' } = params ?? {};
+        const res = await apiClient.post('/sync', { options: { keychain, strategy } });
         return res.data;
     }
 
